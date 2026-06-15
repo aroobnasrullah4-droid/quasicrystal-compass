@@ -272,7 +272,7 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
   const hasComp = compTotal > 0;
 
   return (
-    <section className="rounded-lg border border-border bg-card p-4 shadow-sm">
+    <section className="lg:col-span-12 rounded-xl border border-border bg-card p-5 shadow-sm">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
