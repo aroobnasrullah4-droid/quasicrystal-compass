@@ -619,6 +619,7 @@ Rule-based prototype — experimental validation required.
                 </DialogHeader>
               </DialogContent>
             </Dialog>
+            </div>
 
           </div>
         </div>
