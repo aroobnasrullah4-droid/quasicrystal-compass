@@ -352,6 +352,28 @@ function QCPredictor() {
     setLoadedFrom(null);
   };
 
+  const loadExternalComp = (c: Comp, label: string) => {
+    setComp({ ...c });
+    setMode("literature");
+    setSource("Literature");
+    setLoadedFrom(label);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const predictFromExt = (c: Comp) => {
+    const d = computeDescriptors(c);
+    const p = predict(c, d.e_a, d.total);
+    const pr = computeProperties(c, d.e_a, p.kind === "QC");
+    return {
+      label: p.label,
+      confidence: p.confidence,
+      color: p.color,
+      kind: p.kind,
+      ea: d.e_a,
+      api: pr.antibacterial,
+    };
+  };
+
   // Pulse on prediction change
   useEffect(() => {
     setPulseKey((k) => k + 1);
