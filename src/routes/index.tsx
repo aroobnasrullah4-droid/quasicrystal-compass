@@ -1160,6 +1160,10 @@ Rule-based prototype — experimental validation required.
 
           <CNTPredictor comp={comp} />
 
+          <XRDVisualizer phaseKind={pred.kind === "INVALID" ? "ORDINARY" : pred.kind} cntYield={pred.kind === "QC" ? 20 : 0} />
+
+          <FYPTracker />
+
           <ComparisonPanel
             slots={slots}
             saveSlot={saveSlot}
