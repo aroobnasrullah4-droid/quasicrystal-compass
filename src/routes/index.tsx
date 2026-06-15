@@ -814,6 +814,8 @@ Rule-based prototype — experimental validation required.
                   ⚠ {pred.warning}
                 </div>
               )}
+
+              {pred.kind === "QC" && <QCTypeIndicator />}
             </div>
 
             {/* Hume-Rothery gauge */}
