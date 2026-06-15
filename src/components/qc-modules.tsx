@@ -50,8 +50,8 @@ export function computeStability(c: Comp, e_a: number): { rules: StabilityRule[]
     },
     {
       label: "Al Content",
-      status: c.Al >= 62 && c.Al <= 72 ? "pass" : "fail",
-      detail: `Al = ${c.Al.toFixed(1)}%`,
+      status: c.Al >= 62 && c.Al <= 72 ? "pass" : "warn",
+      detail: c.Al < 62 ? `Low (${c.Al.toFixed(1)}%)` : c.Al > 72 ? `High (${c.Al.toFixed(1)}%)` : `Optimal (${c.Al.toFixed(1)}%)`,
       tooltip: "Al-rich matrix essential for QC formation",
     },
     {
@@ -61,12 +61,15 @@ export function computeStability(c: Comp, e_a: number): { rules: StabilityRule[]
       tooltip: "Mn enhances catalytic + antibacterial activity but excess destabilizes QC phase",
     },
     {
-      label: "Cu/Fe Ratio",
+      label: "Cu/Fe Balance",
       status: (() => {
         const r = c.Fe > 0 ? c.Cu / c.Fe : 0;
         return r >= 1.2 && r <= 1.8 ? "pass" : "warn";
       })(),
-      detail: `Cu/Fe = ${(c.Fe > 0 ? c.Cu / c.Fe : 0).toFixed(2)}`,
+      detail: (() => {
+        const r = c.Fe > 0 ? c.Cu / c.Fe : 0;
+        return r > 1.8 ? `High (${r.toFixed(2)})` : r < 1.2 ? `Low (${r.toFixed(2)})` : `Optimal (${r.toFixed(2)})`;
+      })(),
       tooltip: "Cu/Fe balance controls dodecahedral active site formation after leaching",
     },
   ];
