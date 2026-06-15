@@ -316,17 +316,40 @@ function QCPredictor() {
     return () => clearTimeout(t);
   }, [comp, desc.e_a, pred, source]);
 
-  const handleSlider = (k: ElKey, v: number) => setComp((p) => normalizeOnChange(p, k, v));
+  const handleSlider = (k: ElKey, v: number) => {
+    setComp((p) => normalizeOnChange(p, k, v));
+    setLoadedFrom(null);
+  };
   const handleNumber = (k: ElKey, v: number) => {
     setComp((p) => ({ ...p, [k]: isNaN(v) ? 0 : Math.max(0, v) }));
     setSource("Manual");
+    setLoadedFrom(null);
   };
 
   const loadPreset = (p: Preset) => {
     setComp({ ...p.comp });
     setMode("literature");
     setSource("Literature");
+    setLoadedFrom(p.label);
   };
+
+  const resetComp = () => {
+    setComp({ Al: 65, Cu: 20, Fe: 10, Mn: 5 });
+    setSource("Literature");
+    setLoadedFrom("Tsai Classic");
+  };
+
+  const reloadFromHistory = (r: HistoryRow) => {
+    setComp({ ...r.comp });
+    setSource(r.source);
+    setLoadedFrom(null);
+  };
+
+  // Pulse on prediction change
+  useEffect(() => {
+    setPulseKey((k) => k + 1);
+  }, [pred.kind, pred.label]);
+
 
   const exportCSV = () => {
     const header = "#,Al,Cu,Fe,Mn,Total,e/a,Phase,Confidence,Source,Time\n";
