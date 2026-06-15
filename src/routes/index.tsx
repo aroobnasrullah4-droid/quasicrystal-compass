@@ -841,6 +841,10 @@ Rule-based prototype — experimental validation required.
             </div>
           </section>
 
+          <PropertiesPanel props={props} />
+          <StabilityPanel data={stability} />
+          <LeachingPanel comp={comp} isQC={pred.kind === "QC"} naoh={naoh} setNaoh={setNaoh} />
+
           {/* PANEL 4 — HISTORY */}
           <section className="lg:col-span-12 rounded-xl border border-border bg-card p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
