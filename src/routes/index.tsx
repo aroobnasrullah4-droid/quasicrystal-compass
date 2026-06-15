@@ -658,17 +658,28 @@ Rule-based prototype — experimental validation required.
               <span>{totalBadge.text}</span>
             </div>
 
-            {totalDiff >= 0.1 && (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {totalDiff >= 0.1 ? (
+                <button
+                  onClick={() => {
+                    setComp(autoNormalize(comp));
+                    setSource("Manual");
+                  }}
+                  className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
+                >
+                  Auto-normalize
+                </button>
+              ) : (
+                <div />
+              )}
               <button
-                onClick={() => {
-                  setComp(autoNormalize(comp));
-                  setSource("Manual");
-                }}
-                className="mt-2 w-full rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
+                onClick={resetComp}
+                className="rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
               >
-                Auto-normalize to 100%
+                Reset
               </button>
-            )}
+            </div>
+
 
             {/* Descriptors */}
             <div className="mt-5">
