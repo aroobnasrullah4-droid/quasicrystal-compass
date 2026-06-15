@@ -370,6 +370,11 @@ export function LeachingPanel({
           <div>Expected CNT nucleation: <span className="data-mono" style={{ color: result.activeSites.color }}>{result.activeSites.cnt}</span></div>
           <div>Expected CNT diameter: <span className="data-mono text-primary">{result.cntRange}</span></div>
         </div>
+        <div className="mt-2 text-xs text-muted-foreground">
+          Predicted DIZ enhancement vs base alloy:{" "}
+          <span className="data-mono text-primary">+{result.dizEnhancement.toFixed(1)}%</span>{" "}
+          <span className="italic">— synergistic Cu/Cu₂O + CNT effect (Ali et al. 2025)</span>
+        </div>
       </div>
     </section>
   );
