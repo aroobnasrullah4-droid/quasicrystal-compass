@@ -22,7 +22,11 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "QC Phase Predictor — Al-Cu-Fe-Mn Quasicrystal Tool" },
-      { name: "description", content: "Predict quasicrystalline phase formation in Al-Cu-Fe-Mn alloys using rule-based heuristics. PIEAS FYP." },
+      {
+        name: "description",
+        content:
+          "Predict quasicrystalline phase formation in Al-Cu-Fe-Mn alloys using rule-based heuristics. PIEAS FYP.",
+      },
     ],
   }),
   component: QCPredictor,
@@ -30,54 +34,70 @@ export const Route = createFileRoute("/")({
 
 // ============ ELEMENT DATA ============
 const ELEMENTS = {
-  Al: { name: "Aluminum", valence: 3, en: 1.61, radius: 143, category: "Post-transition", color: "#94a3b8" },
-  Cu: { name: "Copper", valence: 1, en: 1.90, radius: 128, category: "Transition", color: "#f97316" },
-  Fe: { name: "Iron", valence: 8, en: 1.83, radius: 126, category: "Transition", color: "#a78bfa" },
-  Mn: { name: "Manganese", valence: 7, en: 1.55, radius: 127, category: "Transition", color: "#ec4899" },
+  Al: { name: "Aluminum", valence: 3, vec: 3, en: 1.61, radius: 143, color: "#94a3b8" },
+  Cu: { name: "Copper", valence: 1, vec: 11, en: 1.9, radius: 128, color: "#f97316" },
+  Fe: { name: "Iron", valence: 8, vec: 8, en: 1.83, radius: 126, color: "#a78bfa" },
+  Mn: { name: "Manganese", valence: 7, vec: 7, en: 1.55, radius: 127, color: "#ec4899" },
 } as const;
 
 type ElKey = keyof typeof ELEMENTS;
 type Comp = Record<ElKey, number>;
 
-const PRESETS: Comp[] = [
-  { Al: 65, Cu: 20, Fe: 10, Mn: 5 },
-  { Al: 63, Cu: 18, Fe: 12, Mn: 7 },
-  { Al: 70, Cu: 12, Fe: 13, Mn: 5 },
-  { Al: 68, Cu: 15, Fe: 11, Mn: 6 },
-];
-
 const RANGES: Record<ElKey, [number, number]> = {
-  Al: [55, 80],
-  Cu: [5, 25],
-  Fe: [5, 20],
-  Mn: [1, 10],
+  Al: [50, 85],
+  Cu: [0, 30],
+  Fe: [0, 25],
+  Mn: [0, 15],
 };
+
+interface Preset {
+  label: string;
+  comp: Comp;
+  note: string;
+}
+const PRESETS: { category: "QC" | "APPROX" | "ORDINARY"; title: string; items: Preset[] }[] = [
+  {
+    category: "QC",
+    title: "✓ Strong QC Formers",
+    items: [
+      { label: "Tsai Classic", comp: { Al: 65, Cu: 20, Fe: 10, Mn: 5 }, note: "Tsai et al. benchmark" },
+      { label: "Sir Fahad System", comp: { Al: 63, Cu: 18, Fe: 12, Mn: 7 }, note: "SSRN 2025" },
+      { label: "Al-rich QC", comp: { Al: 70, Cu: 12, Fe: 13, Mn: 5 }, note: "High Al variant" },
+      { label: "High-Cu QC", comp: { Al: 62, Cu: 20, Fe: 13, Mn: 5 }, note: "High Cu variant" },
+      { label: "Standard QC", comp: { Al: 68, Cu: 15, Fe: 11, Mn: 6 }, note: "Literature standard" },
+    ],
+  },
+  {
+    category: "APPROX",
+    title: "⚠ Approximant / Borderline",
+    items: [
+      { label: "High Mn", comp: { Al: 63, Cu: 17, Fe: 12, Mn: 8 }, note: "β-Mn risk" },
+      { label: "Low Al", comp: { Al: 58, Cu: 22, Fe: 13, Mn: 7 }, note: "Al below threshold" },
+      { label: "Mn Limit", comp: { Al: 65, Cu: 18, Fe: 10, Mn: 7 }, note: "Mn at boundary" },
+    ],
+  },
+  {
+    category: "ORDINARY",
+    title: "✗ Non-QC / Ordinary Crystal",
+    items: [
+      { label: "Al-excess", comp: { Al: 80, Cu: 8, Fe: 8, Mn: 4 }, note: "Al far too high" },
+      { label: "Al-deficient", comp: { Al: 55, Cu: 25, Fe: 15, Mn: 5 }, note: "Al too low" },
+      { label: "Fe-deficient", comp: { Al: 65, Cu: 20, Fe: 5, Mn: 10 }, note: "Fe low, Mn excessive" },
+    ],
+  },
+];
 
 // ============ CALCULATIONS ============
 function computeDescriptors(c: Comp) {
   const total = c.Al + c.Cu + c.Fe + c.Mn;
-  const w = (k: ElKey) => c[k] / total;
-  const e_a =
-    w("Al") * ELEMENTS.Al.valence +
-    w("Cu") * ELEMENTS.Cu.valence +
-    w("Fe") * ELEMENTS.Fe.valence +
-    w("Mn") * ELEMENTS.Mn.valence;
-  const en =
-    w("Al") * ELEMENTS.Al.en +
-    w("Cu") * ELEMENTS.Cu.en +
-    w("Fe") * ELEMENTS.Fe.en +
-    w("Mn") * ELEMENTS.Mn.en;
-  const radius =
-    w("Al") * ELEMENTS.Al.radius +
-    w("Cu") * ELEMENTS.Cu.radius +
-    w("Fe") * ELEMENTS.Fe.radius +
-    w("Mn") * ELEMENTS.Mn.radius;
-  // VEC same as e/a for these monovalent-ish models, but compute slightly differently — treat as full valence electron concentration
-  const vec = e_a;
+  const e_a = (c.Al * 3 + c.Cu * 1 + c.Fe * 8 + c.Mn * 7) / 100;
+  const en = (c.Al * 1.61 + c.Cu * 1.9 + c.Fe * 1.83 + c.Mn * 1.55) / 100;
+  const radius = (c.Al * 143 + c.Cu * 128 + c.Fe * 126 + c.Mn * 127) / 100;
+  const vec = (c.Al * 3 + c.Cu * 11 + c.Fe * 8 + c.Mn * 7) / 100;
   return { e_a, en, radius, vec, total };
 }
 
-type PredKind = "QC" | "APPROX" | "ORDINARY";
+type PredKind = "QC" | "APPROX" | "ORDINARY" | "INVALID";
 interface Prediction {
   kind: PredKind;
   label: string;
@@ -87,47 +107,60 @@ interface Prediction {
   warning?: string;
 }
 
-function predict(c: Comp, e_a: number): Prediction {
+function predict(c: Comp, e_a: number, total: number): Prediction {
+  if (total < 98 || total > 102) {
+    return {
+      kind: "INVALID",
+      label: "Enter valid composition to predict",
+      confidence: 0,
+      color: "#64748B",
+      reasoning: `Total must be 98–102%. Current total = ${total.toFixed(1)}%`,
+    };
+  }
   const { Al, Cu, Fe, Mn } = c;
   const warning = Mn > 6 ? "High Mn content (>6 at%) — competing β-Mn phase risk" : undefined;
 
-  if (Al >= 62 && Al <= 72 && Cu >= 10 && Cu <= 18 && Fe >= 10 && Fe <= 15 && Mn >= 2 && Mn <= 6) {
+  if (Al >= 62 && Al <= 72 && Cu >= 10 && Cu <= 20 && Fe >= 10 && Fe <= 15 && Mn >= 2 && Mn <= 6) {
     const proximity = Math.max(0, 1 - Math.abs(e_a - 1.86) / 0.2);
-    const confidence = Math.min(95, 75 + proximity * 20);
+    const confidence = Math.min(95, 70 + proximity * 25);
     return {
       kind: "QC",
       label: "Quasicrystalline Phase",
       confidence,
       color: "#22C55E",
-      reasoning: `e/a = ${e_a.toFixed(2)} — ${e_a >= 1.75 && e_a <= 1.95 ? "within icosahedral stability window" : "near icosahedral window"}`,
+      reasoning: `Rule QC matched: Al 62-72, Cu 10-20, Fe 10-15, Mn 2-6 — e/a = ${e_a.toFixed(2)} (target 1.86)`,
       warning,
     };
   }
-  // Deterministic pseudo-confidence from composition (avoid hydration mismatch)
-  const seed = (Al * 7.3 + Cu * 3.1 + Fe * 5.7 + Mn * 11.9) % 1;
-  if (Al >= 58 && Cu >= 8 && Fe >= 8 && Mn > 6) {
-    const confidence = 45 + seed * 20;
+  if (Al >= 58 && Al <= 72 && Cu >= 8 && Cu <= 20 && Fe >= 8 && Fe <= 15 && Mn >= 6 && Mn <= 9) {
+    const proximity = Math.max(0, 1 - Math.abs(e_a - 1.86) / 0.25);
+    const confidence = 45 + proximity * 15;
     return {
       kind: "APPROX",
       label: "Approximant Crystal",
       confidence,
       color: "#F59E0B",
-      reasoning: "Composition borders QC field but high Mn favors periodic approximant",
+      reasoning: "Rule APPROX matched: borders QC field but high Mn favors periodic approximant",
       warning: warning ?? "Periodic approximant structure expected",
     };
   }
-  const confidence = 20 + seed * 20;
+  const dist =
+    Math.max(0, Math.max(58 - Al, Al - 72)) +
+    Math.max(0, Math.max(8 - Cu, Cu - 20)) +
+    Math.max(0, Math.max(8 - Fe, Fe - 15)) +
+    Math.max(0, Math.max(0 - Mn, Mn - 9));
+  const confidence = Math.max(15, 35 - dist * 1.5);
   return {
     kind: "ORDINARY",
     label: "Ordinary Crystal / Multi-phase",
     confidence,
     color: "#EF4444",
-    reasoning: `Composition outside known Al-Cu-Fe-Mn QC stability field (e/a = ${e_a.toFixed(2)})`,
+    reasoning: `Composition outside known QC stability field (e/a = ${e_a.toFixed(2)})`,
     warning,
   };
 }
 
-// ============ NORMALIZATION ============
+// ============ NORMALIZATION (Explorer mode) ============
 function normalizeOnChange(prev: Comp, key: ElKey, newVal: number): Comp {
   const [min, max] = RANGES[key];
   newVal = Math.max(min, Math.min(max, newVal));
@@ -137,57 +170,61 @@ function normalizeOnChange(prev: Comp, key: ElKey, newVal: number): Comp {
   const next: Comp = { ...prev, [key]: newVal };
   if (othersSum > 0) {
     others.forEach((k) => {
-      const [mn, mx] = RANGES[k];
       const scaled = (prev[k] / othersSum) * remaining;
-      next[k] = Math.max(mn, Math.min(mx, scaled));
+      next[k] = Math.max(0, scaled);
     });
   }
-  // Re-balance to ensure exactly 100 (account for clamping)
   const sum = next.Al + next.Cu + next.Fe + next.Mn;
   const diff = 100 - sum;
   if (Math.abs(diff) > 0.01) {
-    // distribute diff to the largest other slot that has headroom
     const sortable = others.sort((a, b) => next[b] - next[a]);
-    for (const k of sortable) {
-      const [mn, mx] = RANGES[k];
-      const want = next[k] + diff;
-      if (want >= mn && want <= mx) {
-        next[k] = want;
-        break;
-      }
-    }
+    if (sortable[0]) next[sortable[0]] += diff;
   }
   return next;
 }
 
+function autoNormalize(c: Comp): Comp {
+  const total = c.Al + c.Cu + c.Fe + c.Mn;
+  if (total <= 0) return c;
+  const f = 100 / total;
+  return { Al: c.Al * f, Cu: c.Cu * f, Fe: c.Fe * f, Mn: c.Mn * f };
+}
+
 // ============ COMPONENT ============
+type Mode = "literature" | "explorer";
+type Source = "Literature" | "Manual";
+
 interface HistoryRow {
   id: number;
   comp: Comp;
   e_a: number;
   pred: Prediction;
+  source: Source;
   ts: string;
 }
 
 function QCPredictor() {
-  const [comp, setComp] = useState<Comp>({ Al: 65, Cu: 15, Fe: 12, Mn: 8 });
+  const [mode, setMode] = useState<Mode>("literature");
+  const [comp, setComp] = useState<Comp>({ Al: 65, Cu: 20, Fe: 10, Mn: 5 });
+  const [source, setSource] = useState<Source>("Literature");
   const [history, setHistory] = useState<HistoryRow[]>([]);
-  const [presetIdx, setPresetIdx] = useState(0);
+  const [showPresets, setShowPresets] = useState(true);
 
   const desc = useMemo(() => computeDescriptors(comp), [comp]);
-  const pred = useMemo(() => predict(comp, desc.e_a), [comp, desc.e_a]);
+  const pred = useMemo(() => predict(comp, desc.e_a, desc.total), [comp, desc]);
 
-  // record to history (debounced via timer)
+  // record to history (debounced)
   useEffect(() => {
+    if (pred.kind === "INVALID") return;
     const t = setTimeout(() => {
       setHistory((h) => {
         const last = h[h.length - 1];
         if (
           last &&
-          last.comp.Al === comp.Al &&
-          last.comp.Cu === comp.Cu &&
-          last.comp.Fe === comp.Fe &&
-          last.comp.Mn === comp.Mn
+          Math.abs(last.comp.Al - comp.Al) < 0.05 &&
+          Math.abs(last.comp.Cu - comp.Cu) < 0.05 &&
+          Math.abs(last.comp.Fe - comp.Fe) < 0.05 &&
+          Math.abs(last.comp.Mn - comp.Mn) < 0.05
         )
           return h;
         return [
@@ -197,28 +234,33 @@ function QCPredictor() {
             comp: { ...comp },
             e_a: desc.e_a,
             pred,
+            source,
             ts: new Date().toLocaleTimeString(),
           },
-        ].slice(-40);
+        ].slice(-50);
       });
-    }, 600);
+    }, 700);
     return () => clearTimeout(t);
-  }, [comp, desc.e_a, pred]);
+  }, [comp, desc.e_a, pred, source]);
 
-  const handleSlider = (k: ElKey, v: number) =>
-    setComp((p) => normalizeOnChange(p, k, v));
+  const handleSlider = (k: ElKey, v: number) => setComp((p) => normalizeOnChange(p, k, v));
+  const handleNumber = (k: ElKey, v: number) => {
+    setComp((p) => ({ ...p, [k]: isNaN(v) ? 0 : Math.max(0, v) }));
+    setSource("Manual");
+  };
 
-  const applyPreset = () => {
-    setComp({ ...PRESETS[presetIdx] });
-    setPresetIdx((i) => (i + 1) % PRESETS.length);
+  const loadPreset = (p: Preset) => {
+    setComp({ ...p.comp });
+    setMode("literature");
+    setSource("Literature");
   };
 
   const exportCSV = () => {
-    const header = "#,Al,Cu,Fe,Mn,e/a,Phase,Confidence,Time\n";
+    const header = "#,Al,Cu,Fe,Mn,Total,e/a,Phase,Confidence,Source,Time\n";
     const rows = history
       .map(
         (r) =>
-          `${r.id},${r.comp.Al.toFixed(2)},${r.comp.Cu.toFixed(2)},${r.comp.Fe.toFixed(2)},${r.comp.Mn.toFixed(2)},${r.e_a.toFixed(3)},${r.pred.label},${r.pred.confidence.toFixed(1)},${r.ts}`
+          `${r.id},${r.comp.Al.toFixed(2)},${r.comp.Cu.toFixed(2)},${r.comp.Fe.toFixed(2)},${r.comp.Mn.toFixed(2)},${(r.comp.Al + r.comp.Cu + r.comp.Fe + r.comp.Mn).toFixed(2)},${r.e_a.toFixed(3)},${r.pred.label},${r.pred.confidence.toFixed(1)},${r.source},${r.ts}`
       )
       .join("\n");
     const blob = new Blob([header + rows], { type: "text/csv" });
@@ -231,19 +273,16 @@ function QCPredictor() {
   };
 
   const copyColab = () => {
-    const data = {
-      compositions: history.map((r) => ({
-        Al: +r.comp.Al.toFixed(2),
-        Cu: +r.comp.Cu.toFixed(2),
-        Fe: +r.comp.Fe.toFixed(2),
-        Mn: +r.comp.Mn.toFixed(2),
-        e_a: +r.e_a.toFixed(3),
-        phase: r.pred.label,
-        confidence: +r.pred.confidence.toFixed(1),
-      })),
-    };
-    const py = `# QC Phase Predictor session export\nsession_data = ${JSON.stringify(data, null, 2)}\n\nimport pandas as pd\ndf = pd.DataFrame(session_data['compositions'])\nprint(df.head())`;
-    navigator.clipboard.writeText(py);
+    const arr = history.map((r) => ({
+      Al: +r.comp.Al.toFixed(2),
+      Cu: +r.comp.Cu.toFixed(2),
+      Fe: +r.comp.Fe.toFixed(2),
+      Mn: +r.comp.Mn.toFixed(2),
+      phase: r.pred.kind,
+      confidence: +r.pred.confidence.toFixed(1),
+    }));
+    const py = `compositions = ${JSON.stringify(arr)}\n\nimport pandas as pd\ndf = pd.DataFrame(compositions)\nprint(df.head())`;
+    navigator.clipboard?.writeText(py);
   };
 
   const bestQC = useMemo(() => {
@@ -253,11 +292,19 @@ function QCPredictor() {
   }, [history]);
 
   const radarData = [
-    { axis: "Al", value: comp.Al, ref: 65, max: 80 },
-    { axis: "Cu", value: comp.Cu, ref: 15, max: 25 },
-    { axis: "Fe", value: comp.Fe, ref: 12, max: 20 },
-    { axis: "Mn", value: comp.Mn, ref: 4, max: 10 },
+    { axis: "Al", value: comp.Al, ref: 65 },
+    { axis: "Cu", value: comp.Cu, ref: 15 },
+    { axis: "Fe", value: comp.Fe, ref: 12 },
+    { axis: "Mn", value: comp.Mn, ref: 4 },
   ];
+
+  const totalDiff = Math.abs(desc.total - 100);
+  const totalBadge =
+    totalDiff < 0.1
+      ? { color: "#22C55E", text: `✓ ${desc.total.toFixed(1)}%`, bg: "rgba(34,197,94,0.1)" }
+      : totalDiff <= 2
+        ? { color: "#F59E0B", text: `⚠ ${desc.total.toFixed(1)}% — normalize?`, bg: "rgba(245,158,11,0.1)" }
+        : { color: "#EF4444", text: `✗ ${desc.total.toFixed(1)}% — invalid`, bg: "rgba(239,68,68,0.1)" };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -273,9 +320,7 @@ function QCPredictor() {
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">
-                    QC Phase Predictor
-                  </h1>
+                  <h1 className="text-2xl font-bold tracking-tight">QC Phase Predictor</h1>
                   <p className="text-sm text-muted-foreground">
                     ML-Inspired Quasicrystal Composition Tool — Al-Cu-Fe-Mn System
                   </p>
@@ -287,30 +332,28 @@ function QCPredictor() {
                 <span className="text-muted-foreground">| MME Department</span>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="border-border bg-secondary hover:bg-secondary/80">About</Button>
-                </DialogTrigger>
-                <DialogContent className="bg-card border-border">
-                  <DialogHeader>
-                    <DialogTitle>About QC Phase Predictor</DialogTitle>
-                    <DialogDescription className="text-muted-foreground pt-2 space-y-2">
-                      <span className="block">
-                        A rule-based prototype for predicting quasicrystalline phase formation
-                        in the Al-Cu-Fe-Mn quaternary system, developed at the Pakistan
-                        Institute of Engineering and Applied Sciences (PIEAS).
-                      </span>
-                      <span className="block">
-                        Heuristics are derived from the Hume-Rothery electron concentration
-                        rule and known Tsai-type icosahedral phase fields. Real ML
-                        integration (HYPOD-X database) is planned for the next iteration.
-                      </span>
-                    </DialogDescription>
-                  </DialogHeader>
-                </DialogContent>
-              </Dialog>
-            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="border-border bg-secondary hover:bg-secondary/80">
+                  About
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-card border-border">
+                <DialogHeader>
+                  <DialogTitle>About QC Phase Predictor</DialogTitle>
+                  <DialogDescription className="text-muted-foreground pt-2 space-y-2">
+                    <span className="block">
+                      A rule-based prototype for predicting quasicrystalline phase formation in the
+                      Al-Cu-Fe-Mn quaternary system, developed at PIEAS.
+                    </span>
+                    <span className="block">
+                      Heuristics derived from the Hume-Rothery electron concentration rule and known
+                      Tsai-type icosahedral phase fields. Real ML integration (HYPOD-X) is planned.
+                    </span>
+                  </DialogDescription>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </header>
@@ -323,7 +366,31 @@ function QCPredictor() {
             <h2 className="text-lg font-semibold">Alloy Composition Input</h2>
             <p className="text-sm text-muted-foreground mb-4">Al-Cu-Fe-Mn Quaternary System</p>
 
-            <div className="space-y-4">
+            {/* Mode toggle */}
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-secondary/40 p-1">
+              <button
+                onClick={() => setMode("literature")}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  mode === "literature"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Literature Mode
+              </button>
+              <button
+                onClick={() => setMode("explorer")}
+                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
+                  mode === "explorer"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Explorer Mode
+              </button>
+            </div>
+
+            <div className="space-y-3">
               {(Object.keys(ELEMENTS) as ElKey[]).map((k) => {
                 const [min, max] = RANGES[k];
                 const el = ELEMENTS[k];
@@ -334,43 +401,65 @@ function QCPredictor() {
                         <span style={{ color: el.color }}>{k}</span>{" "}
                         <span className="text-muted-foreground">— {el.name}</span>
                       </label>
-                      <span className="data-mono text-sm text-primary">
-                        {comp[k].toFixed(1)} at%
+                      <span className="data-mono text-[10px] text-muted-foreground">
+                        hint {min}-{max}
                       </span>
                     </div>
-                    <input
-                      type="range"
-                      min={min}
-                      max={max}
-                      step={0.1}
-                      value={comp[k]}
-                      onChange={(e) => handleSlider(k, parseFloat(e.target.value))}
-                      className="w-full accent-primary"
-                    />
-                    <div className="flex justify-between data-mono text-[10px] text-muted-foreground">
-                      <span>{min}</span>
-                      <span>{max}</span>
-                    </div>
+                    {mode === "literature" ? (
+                      <input
+                        type="number"
+                        step={0.1}
+                        value={Number(comp[k].toFixed(2))}
+                        onChange={(e) => handleNumber(k, parseFloat(e.target.value))}
+                        className="w-full rounded-md border border-border bg-secondary/40 px-3 py-1.5 data-mono text-sm text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    ) : (
+                      <>
+                        <input
+                          type="range"
+                          min={min}
+                          max={max}
+                          step={0.1}
+                          value={comp[k]}
+                          onChange={(e) => handleSlider(k, parseFloat(e.target.value))}
+                          className="w-full accent-primary"
+                        />
+                        <div className="flex justify-between data-mono text-[10px] text-muted-foreground">
+                          <span>{min}</span>
+                          <span className="text-primary">{comp[k].toFixed(1)} at%</span>
+                          <span>{max}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 );
               })}
             </div>
 
-            <div className={`mt-4 rounded-lg border px-3 py-2 text-sm data-mono ${
-              Math.abs(desc.total - 100) < 0.1
-                ? "border-primary/30 bg-primary/5 text-primary"
-                : "border-destructive/40 bg-destructive/10 text-destructive"
-            }`}>
-              Total: {desc.total.toFixed(1)} at%
+            {/* Total badge */}
+            <div
+              className="mt-4 flex items-center justify-between rounded-lg border px-3 py-2 text-sm data-mono"
+              style={{
+                borderColor: totalBadge.color + "55",
+                background: totalBadge.bg,
+                color: totalBadge.color,
+              }}
+            >
+              <span>Total</span>
+              <span>{totalBadge.text}</span>
             </div>
 
-            <button
-              onClick={applyPreset}
-              title="Based on known stable Al-Cu-Fe-Mn QC literature"
-              className="mt-3 w-full rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-            >
-              Suggest QC-Optimized Composition
-            </button>
+            {totalDiff >= 0.1 && (
+              <button
+                onClick={() => {
+                  setComp(autoNormalize(comp));
+                  setSource("Manual");
+                }}
+                className="mt-2 w-full rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
+              >
+                Auto-normalize to 100%
+              </button>
+            )}
 
             {/* Descriptors */}
             <div className="mt-5">
@@ -402,10 +491,20 @@ function QCPredictor() {
               <div className="flex items-center justify-between">
                 <span
                   className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
-                  style={{ background: pred.color + "22", color: pred.color, border: `1px solid ${pred.color}44` }}
+                  style={{
+                    background: pred.color + "22",
+                    color: pred.color,
+                    border: `1px solid ${pred.color}44`,
+                  }}
                 >
                   <span className="h-1.5 w-1.5 rounded-full" style={{ background: pred.color }} />
-                  {pred.kind === "QC" ? "QC POSITIVE" : pred.kind === "APPROX" ? "APPROXIMANT" : "NON-QC"}
+                  {pred.kind === "QC"
+                    ? "QC POSITIVE"
+                    : pred.kind === "APPROX"
+                      ? "APPROXIMANT"
+                      : pred.kind === "ORDINARY"
+                        ? "NON-QC"
+                        : "INVALID INPUT"}
                 </span>
                 <span className="data-mono text-xs text-muted-foreground">
                   Al{comp.Al.toFixed(0)}Cu{comp.Cu.toFixed(0)}Fe{comp.Fe.toFixed(0)}Mn{comp.Mn.toFixed(0)}
@@ -417,35 +516,38 @@ function QCPredictor() {
               </h3>
               <p className="mt-2 text-sm text-muted-foreground">{pred.reasoning}</p>
 
-              {/* Arc gauge */}
-              <div className="mt-5 flex items-center gap-5">
-                <ArcGauge value={pred.confidence} color={pred.color} />
-                <div className="flex-1">
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">Confidence</div>
-                  <div className="data-mono text-2xl font-bold" style={{ color: pred.color }}>
-                    {pred.confidence.toFixed(1)}%
-                  </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    Hume-Rothery e/a:{" "}
-                    <span
-                      className="data-mono"
-                      style={{
-                        color:
-                          desc.e_a >= 1.8 && desc.e_a <= 1.95
-                            ? "#22C55E"
-                            : desc.e_a >= 1.75 && desc.e_a <= 2.10
-                            ? "#F59E0B"
-                            : "#EF4444",
-                      }}
-                    >
-                      {desc.e_a.toFixed(3)}
-                    </span>
+              {pred.kind !== "INVALID" && (
+                <div className="mt-5 flex items-center gap-5">
+                  <ArcGauge value={pred.confidence} color={pred.color} />
+                  <div className="flex-1">
+                    <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                      Confidence
+                    </div>
+                    <div className="data-mono text-2xl font-bold" style={{ color: pred.color }}>
+                      {pred.confidence.toFixed(1)}%
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Hume-Rothery e/a:{" "}
+                      <span
+                        className="data-mono"
+                        style={{
+                          color:
+                            desc.e_a >= 1.8 && desc.e_a <= 1.95
+                              ? "#22C55E"
+                              : desc.e_a >= 1.75 && desc.e_a <= 2.1
+                                ? "#F59E0B"
+                                : "#EF4444",
+                        }}
+                      >
+                        {desc.e_a.toFixed(3)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {pred.warning && (
-                <div className="mt-4 rounded-md border border-qc-approximant/40 bg-qc-approximant/10 px-3 py-2 text-xs text-qc-approximant">
+                <div className="mt-4 rounded-md border px-3 py-2 text-xs" style={{ borderColor: "#F59E0B66", background: "#F59E0B14", color: "#F59E0B" }}>
                   ⚠ {pred.warning}
                 </div>
               )}
@@ -454,7 +556,7 @@ function QCPredictor() {
             {/* Hume-Rothery gauge */}
             <div className="mt-5 rounded-lg border border-border bg-secondary/30 p-4">
               <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium">Hume-Rothery Electron Concentration</span>
+                <span className="text-sm font-medium">Hume-Rothery e/a Stability Window</span>
                 <span className="data-mono text-sm text-primary">e/a = {desc.e_a.toFixed(3)}</span>
               </div>
               <HumeRotheryBar value={desc.e_a} />
@@ -465,34 +567,52 @@ function QCPredictor() {
                 <span>2.10</span>
                 <span>2.30</span>
               </div>
+              <div className="mt-2 text-[11px] text-muted-foreground">
+                Ideal icosahedral QC: e/a ≈ 1.86
+              </div>
             </div>
 
-            {/* Phase diagram reference */}
-            <div className="mt-4 rounded-lg border border-border bg-secondary/20 p-4">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
-                Reference: Al-Cu-Fe-Mn QC phase field
+            {/* Element Cards */}
+            <div className="mt-4">
+              <div className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
+                Element breakdown
               </div>
-              <pre className="data-mono text-[10px] leading-tight text-muted-foreground overflow-x-auto">
-{`        Al (apex)
-           /\\
-          /  \\
-         / QC \\        ← icosahedral i-phase
-        /  ◆◆  \\           (Al~65, Cu~15, Fe~12, Mn~4-6)
-       /  ◆◆◆◆  \\
-      / approx.  \\
-     /────────────\\
-    Cu            Fe`}
-              </pre>
-              <div className="text-[10px] text-muted-foreground mt-1">
-                Schematic, after Tsai et al. — Mn stabilizes the icosahedral phase up to ~6 at%.
+              <div className="grid grid-cols-2 gap-2">
+                {(Object.keys(ELEMENTS) as ElKey[]).map((k) => {
+                  const el = ELEMENTS[k];
+                  const glow = pred.kind === "INVALID" ? "transparent" : pred.color;
+                  return (
+                    <div
+                      key={k}
+                      className="rounded-lg border bg-secondary/40 p-3 transition"
+                      style={{
+                        borderColor: pred.kind === "INVALID" ? "" : glow + "55",
+                        boxShadow: pred.kind === "INVALID" ? "none" : `0 0 14px -4px ${glow}55`,
+                      }}
+                    >
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-2xl font-bold" style={{ color: el.color }}>
+                          {k}
+                        </span>
+                        <span className="data-mono text-sm text-primary">
+                          {comp[k].toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="mt-1 space-y-0.5 text-[10px] text-muted-foreground data-mono">
+                        <div>EN: {el.en}</div>
+                        <div>r: {el.radius} pm</div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </section>
 
-          {/* PANEL 3 — VISUALIZATION */}
+          {/* PANEL 3 — VISUALIZATION + PRESETS */}
           <section className="lg:col-span-3 space-y-4">
             <div className="rounded-xl border border-border bg-card p-4">
-              <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 03a</div>
+              <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 03</div>
               <h2 className="text-sm font-semibold mb-2">Composition Radar</h2>
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
@@ -518,40 +638,63 @@ function QCPredictor() {
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex justify-center gap-3 text-[10px] text-muted-foreground">
-                <span className="inline-flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full bg-primary/60" /> QC reference
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <span className="h-2 w-2 rounded-full" style={{ background: pred.color }} /> Current
-                </span>
-              </div>
             </div>
 
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 03b</div>
-              <h2 className="text-sm font-semibold mb-2">Element Cards</h2>
-              <div className="grid grid-cols-2 gap-2">
-                {(Object.keys(ELEMENTS) as ElKey[]).map((k) => {
-                  const el = ELEMENTS[k];
-                  const contrib = ((comp[k] / 100) * el.valence).toFixed(2);
-                  return (
-                    <div key={k} className="rounded-lg border border-border bg-secondary/40 p-2">
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-lg font-bold" style={{ color: el.color }}>
-                          {k}
-                        </span>
-                        <span className="data-mono text-xs text-primary">{comp[k].toFixed(1)}%</span>
+            {/* PRESETS */}
+            <div className="rounded-xl border border-border bg-card">
+              <button
+                onClick={() => setShowPresets((s) => !s)}
+                className="flex w-full items-center justify-between p-4 text-left"
+              >
+                <div>
+                  <div className="text-xs uppercase tracking-wider text-primary">Presets</div>
+                  <h2 className="text-sm font-semibold">Known Literature Compositions</h2>
+                </div>
+                <span className="text-muted-foreground">{showPresets ? "▾" : "▸"}</span>
+              </button>
+              {showPresets && (
+                <div className="space-y-3 px-4 pb-4">
+                  {PRESETS.map((group) => {
+                    const c =
+                      group.category === "QC"
+                        ? "#22C55E"
+                        : group.category === "APPROX"
+                          ? "#F59E0B"
+                          : "#EF4444";
+                    return (
+                      <div key={group.category}>
+                        <div
+                          className="mb-1 text-[11px] font-semibold uppercase tracking-wider"
+                          style={{ color: c }}
+                        >
+                          {group.title}
+                        </div>
+                        <div className="space-y-1">
+                          {group.items.map((p) => (
+                            <div
+                              key={p.label}
+                              className="flex items-center justify-between rounded-md border border-border bg-secondary/40 px-2 py-1.5"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="truncate text-xs font-medium">{p.label}</div>
+                                <div className="data-mono text-[10px] text-muted-foreground">
+                                  Al{p.comp.Al} Cu{p.comp.Cu} Fe{p.comp.Fe} Mn{p.comp.Mn}
+                                </div>
+                              </div>
+                              <button
+                                onClick={() => loadPreset(p)}
+                                className="rounded border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/20"
+                              >
+                                Load
+                              </button>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                      <div className="mt-1 space-y-0.5 text-[10px] text-muted-foreground data-mono">
-                        <div>EN: {el.en}</div>
-                        <div>r: {el.radius} pm</div>
-                        <div>→ e/a: {contrib}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </section>
 
@@ -582,7 +725,7 @@ function QCPredictor() {
                   onClick={() => setHistory([])}
                   className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/20"
                 >
-                  Clear History
+                  Clear
                 </button>
               </div>
             </div>
@@ -592,26 +735,28 @@ function QCPredictor() {
                 <thead className="text-xs uppercase tracking-wider text-muted-foreground">
                   <tr className="border-b border-border">
                     <th className="px-2 py-2 text-left">#</th>
-                    <th className="px-2 py-2 text-right">Al%</th>
-                    <th className="px-2 py-2 text-right">Cu%</th>
-                    <th className="px-2 py-2 text-right">Fe%</th>
-                    <th className="px-2 py-2 text-right">Mn%</th>
+                    <th className="px-2 py-2 text-right">Al</th>
+                    <th className="px-2 py-2 text-right">Cu</th>
+                    <th className="px-2 py-2 text-right">Fe</th>
+                    <th className="px-2 py-2 text-right">Mn</th>
+                    <th className="px-2 py-2 text-right">Total</th>
                     <th className="px-2 py-2 text-right">e/a</th>
                     <th className="px-2 py-2 text-left">Predicted Phase</th>
                     <th className="px-2 py-2 text-right">Conf%</th>
-                    <th className="px-2 py-2 text-right">Time</th>
+                    <th className="px-2 py-2 text-left">Source</th>
                   </tr>
                 </thead>
                 <tbody className="data-mono">
                   {history.length === 0 && (
                     <tr>
-                      <td colSpan={9} className="px-2 py-6 text-center text-muted-foreground">
-                        Adjust composition sliders to begin logging predictions.
+                      <td colSpan={10} className="px-2 py-6 text-center text-muted-foreground">
+                        Adjust composition or load a preset to begin logging predictions.
                       </td>
                     </tr>
                   )}
                   {[...history].reverse().map((r) => {
                     const isBest = bestQC?.id === r.id;
+                    const tot = r.comp.Al + r.comp.Cu + r.comp.Fe + r.comp.Mn;
                     return (
                       <tr
                         key={r.id}
@@ -620,17 +765,26 @@ function QCPredictor() {
                         }`}
                         style={{ borderLeft: `3px solid ${r.pred.color}` }}
                       >
-                        <td className="px-2 py-1.5">{r.id}{isBest && <span className="ml-1 text-qc-positive">★</span>}</td>
+                        <td className="px-2 py-1.5">
+                          {r.id}
+                          {isBest && <span className="ml-1 text-qc-positive">★</span>}
+                        </td>
                         <td className="px-2 py-1.5 text-right">{r.comp.Al.toFixed(1)}</td>
                         <td className="px-2 py-1.5 text-right">{r.comp.Cu.toFixed(1)}</td>
                         <td className="px-2 py-1.5 text-right">{r.comp.Fe.toFixed(1)}</td>
                         <td className="px-2 py-1.5 text-right">{r.comp.Mn.toFixed(1)}</td>
+                        <td className="px-2 py-1.5 text-right">{tot.toFixed(1)}</td>
                         <td className="px-2 py-1.5 text-right">{r.e_a.toFixed(3)}</td>
-                        <td className="px-2 py-1.5 text-left font-sans" style={{ color: r.pred.color }}>
+                        <td
+                          className="px-2 py-1.5 text-left font-sans"
+                          style={{ color: r.pred.color }}
+                        >
                           {r.pred.label}
                         </td>
                         <td className="px-2 py-1.5 text-right">{r.pred.confidence.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-right text-muted-foreground">{r.ts}</td>
+                        <td className="px-2 py-1.5 text-left text-muted-foreground font-sans">
+                          {r.source}
+                        </td>
                       </tr>
                     );
                   })}
@@ -639,16 +793,18 @@ function QCPredictor() {
             </div>
             {bestQC && (
               <div className="mt-3 text-xs text-qc-positive">
-                ★ Best QC candidate: #{bestQC.id} — Al{bestQC.comp.Al.toFixed(1)} Cu{bestQC.comp.Cu.toFixed(1)} Fe{bestQC.comp.Fe.toFixed(1)} Mn{bestQC.comp.Mn.toFixed(1)} ({bestQC.pred.confidence.toFixed(1)}% confidence)
+                ★ Best QC candidate: #{bestQC.id} — Al{bestQC.comp.Al.toFixed(1)} Cu
+                {bestQC.comp.Cu.toFixed(1)} Fe{bestQC.comp.Fe.toFixed(1)} Mn
+                {bestQC.comp.Mn.toFixed(1)} ({bestQC.pred.confidence.toFixed(1)}% confidence)
               </div>
             )}
           </section>
         </div>
 
-        {/* FOOTER */}
         <footer className="mt-8 border-t border-border pt-4 text-center text-xs text-muted-foreground">
-          This tool uses rule-based heuristics as a prototype for an ML model being trained on the HYPOD-X quasicrystal database.
-          Predictions are for research guidance only. Experimental validation required.
+          Rule-based prototype for a Random Forest ML model being trained on the HYPOD-X
+          quasicrystal database (2024). Predictions are research guidance only — experimental
+          validation required. PIEAS MME FYP 2025–26.
         </footer>
       </main>
     </div>
@@ -667,17 +823,12 @@ function DescCard({ label, value }: { label: string; value: string }) {
 
 function ArcGauge({ value, color }: { value: number; color: string }) {
   const r = 36;
-  const c = Math.PI * r; // half circumference
-  const offset = c - (Math.min(100, Math.max(0, value)) / 100) * c;
+  const c = Math.PI * r;
+  const v = Math.min(100, Math.max(0, value));
+  const offset = c - (v / 100) * c;
   return (
     <svg width="100" height="60" viewBox="0 0 100 60">
-      <path
-        d={`M 10 55 A ${r} ${r} 0 0 1 90 55`}
-        fill="none"
-        stroke="#1E293B"
-        strokeWidth="8"
-        strokeLinecap="round"
-      />
+      <path d={`M 10 55 A ${r} ${r} 0 0 1 90 55`} fill="none" stroke="#1E293B" strokeWidth="8" strokeLinecap="round" />
       <path
         d={`M 10 55 A ${r} ${r} 0 0 1 90 55`}
         fill="none"
@@ -697,7 +848,7 @@ function ArcGauge({ value, color }: { value: number; color: string }) {
         fontWeight="700"
         fill={color}
       >
-        {Math.round(value)}
+        {Math.round(v)}
       </text>
     </svg>
   );
@@ -707,15 +858,17 @@ function HumeRotheryBar({ value }: { value: number }) {
   const min = 1.5;
   const max = 2.3;
   const pct = Math.max(0, Math.min(1, (value - min) / (max - min))) * 100;
+  const seg = (a: number, b: number) => ({
+    left: `${((a - min) / (max - min)) * 100}%`,
+    width: `${((b - a) / (max - min)) * 100}%`,
+  });
   return (
     <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
-      {/* zones */}
-      <div className="absolute inset-y-0" style={{ left: "0%", width: `${((1.75 - min) / (max - min)) * 100}%`, background: "#EF444433" }} />
-      <div className="absolute inset-y-0" style={{ left: `${((1.75 - min) / (max - min)) * 100}%`, width: `${((1.80 - 1.75) / (max - min)) * 100}%`, background: "#F59E0B44" }} />
-      <div className="absolute inset-y-0" style={{ left: `${((1.80 - min) / (max - min)) * 100}%`, width: `${((1.95 - 1.80) / (max - min)) * 100}%`, background: "#22C55E55" }} />
-      <div className="absolute inset-y-0" style={{ left: `${((1.95 - min) / (max - min)) * 100}%`, width: `${((2.10 - 1.95) / (max - min)) * 100}%`, background: "#F59E0B44" }} />
-      <div className="absolute inset-y-0" style={{ left: `${((2.10 - min) / (max - min)) * 100}%`, right: 0, background: "#EF444433" }} />
-      {/* marker */}
+      <div className="absolute inset-y-0" style={{ ...seg(min, 1.75), background: "#EF444433" }} />
+      <div className="absolute inset-y-0" style={{ ...seg(1.75, 1.8), background: "#F59E0B44" }} />
+      <div className="absolute inset-y-0" style={{ ...seg(1.8, 1.95), background: "#22C55E55" }} />
+      <div className="absolute inset-y-0" style={{ ...seg(1.95, 2.1), background: "#F59E0B44" }} />
+      <div className="absolute inset-y-0" style={{ ...seg(2.1, max), background: "#EF444433" }} />
       <div
         className="absolute top-1/2 h-5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground shadow-lg"
         style={{ left: `${pct}%`, transition: "left 0.3s ease" }}
