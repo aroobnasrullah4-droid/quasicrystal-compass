@@ -862,6 +862,19 @@ Rule-based prototype — experimental validation required.
               {pred.kind === "QC" && <QCTypeIndicator />}
             </div>
 
+            {pred.kind !== "INVALID" && (
+              <AIAnalysis
+                comp={comp}
+                phase={pred.label}
+                confidence={pred.confidence}
+                e_a={desc.e_a}
+                stabilityPassed={stability.passed}
+                api={props.antibacterial}
+              />
+            )}
+
+            <div style={{ display: "none" }}>
+
             {/* Hume-Rothery gauge */}
             <div className="mt-5 rounded-lg border border-border bg-secondary/30 p-4">
               <div className="mb-2 flex items-center justify-between">
