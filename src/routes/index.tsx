@@ -1018,11 +1018,40 @@ Rule-based prototype — experimental validation required.
             </div>
           </section>
 
+          {/* XRD sits right next to the prediction so users see the diffraction
+              signature of the phase without scrolling */}
+          <div className="lg:col-span-12">
+            <XRDVisualizer phaseKind={pred.kind === "INVALID" ? "ORDINARY" : pred.kind} cntYield={pred.kind === "QC" ? 20 : 0} />
+          </div>
+
+          {/* Properties group — predicted material behavior */}
           <PropertiesPanel props={props} />
           <StabilityPanel data={stability} />
-          <LeachingPanel comp={comp} isQC={pred.kind === "QC"} naoh={naoh} setNaoh={setNaoh} />
+          <TsaiRulesPanel comp={comp} desc={{ e_a: desc.e_a, delta: desc.delta }} />
 
-          {/* PANEL 4 — HISTORY */}
+          {/* Surface / CNT group — leaching feeds CNT growth, keep together */}
+          <LeachingPanel comp={comp} isQC={pred.kind === "QC"} naoh={naoh} setNaoh={setNaoh} />
+          <div className="lg:col-span-12">
+            <CNTPredictor comp={comp} />
+          </div>
+
+          {/* Exploration group — what-if tools */}
+          <DopantExplorer
+            currentComp={comp}
+            currentEa={desc.e_a}
+            currentPhase={pred.label}
+            currentConf={pred.confidence}
+            currentApi={props.antibacterial}
+            predictFromExt={predictFromExt}
+          />
+          <ComparisonPanel
+            slots={slots}
+            saveSlot={saveSlot}
+            clearSlot={clearSlot}
+            currentSlot={currentSlot}
+          />
+
+          {/* Session history */}
           <section className="lg:col-span-12 rounded-xl border border-border bg-card p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <button
@@ -1145,34 +1174,12 @@ Rule-based prototype — experimental validation required.
             )}
           </section>
 
-          <MLDiscoveryPanel loadComp={loadExternalComp} />
-
-          <DopantExplorer
-            currentComp={comp}
-            currentEa={desc.e_a}
-            currentPhase={pred.label}
-            currentConf={pred.confidence}
-            currentApi={props.antibacterial}
-            predictFromExt={predictFromExt}
-          />
-
-          <TsaiRulesPanel comp={comp} desc={{ e_a: desc.e_a, delta: desc.delta }} />
-
-          <CNTPredictor comp={comp} />
-
-          <XRDVisualizer phaseKind={pred.kind === "INVALID" ? "ORDINARY" : pred.kind} cntYield={pred.kind === "QC" ? 20 : 0} />
-
+          {/* Project planning + export */}
           <FYPTracker />
-
-          <ComparisonPanel
-            slots={slots}
-            saveSlot={saveSlot}
-            clearSlot={clearSlot}
-            currentSlot={currentSlot}
-          />
-
           <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
 
+          {/* Reference / literature group at bottom */}
+          <MLDiscoveryPanel loadComp={loadExternalComp} />
           <ReferencesPanel />
         </div>
 
