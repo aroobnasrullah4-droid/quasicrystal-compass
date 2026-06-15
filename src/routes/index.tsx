@@ -984,9 +984,10 @@ Rule-based prototype — experimental validation required.
             </div>
 
 
-            <div className="overflow-x-auto">
+            {showHistory && (
+            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 320 }}>
               <table className="w-full text-sm">
-                <thead className="text-xs uppercase tracking-wider text-muted-foreground">
+                <thead className="text-xs uppercase tracking-wider text-muted-foreground sticky top-0 bg-card">
                   <tr className="border-b border-border">
                     <th className="px-2 py-2 text-left">#</th>
                     <th className="px-2 py-2 text-right">Al</th>
@@ -1008,43 +1009,47 @@ Rule-based prototype — experimental validation required.
                       </td>
                     </tr>
                   )}
-                  {[...history].reverse().map((r) => {
-                    const isBest = bestQC?.id === r.id;
-                    const tot = r.comp.Al + r.comp.Cu + r.comp.Fe + r.comp.Mn;
-                    return (
-                      <tr
-                        key={r.id}
-                        className={`border-b border-border/50 hover:bg-secondary/30 ${
-                          isBest ? "bg-qc-positive/10" : ""
-                        }`}
-                        style={{ borderLeft: `3px solid ${r.pred.color}` }}
-                      >
-                        <td className="px-2 py-1.5">
-                          {r.id}
-                          {isBest && <span className="ml-1 text-qc-positive">★</span>}
-                        </td>
-                        <td className="px-2 py-1.5 text-right">{r.comp.Al.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-right">{r.comp.Cu.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-right">{r.comp.Fe.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-right">{r.comp.Mn.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-right">{tot.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-right">{r.e_a.toFixed(3)}</td>
-                        <td
-                          className="px-2 py-1.5 text-left font-sans"
-                          style={{ color: r.pred.color }}
+                  {[...history]
+                    .reverse()
+                    .filter((r) => historyFilter === "ALL" || r.pred.kind === historyFilter)
+                    .map((r) => {
+                      const isBest = bestQC?.id === r.id;
+                      const tot = r.comp.Al + r.comp.Cu + r.comp.Fe + r.comp.Mn;
+                      return (
+                        <tr
+                          key={r.id}
+                          onClick={() => reloadFromHistory(r)}
+                          title="Click to reload this composition"
+                          className={`border-b border-border/50 hover:bg-secondary/30 cursor-pointer ${
+                            isBest ? "bg-qc-positive/10" : ""
+                          }`}
+                          style={{ borderLeft: `3px solid ${r.pred.color}` }}
                         >
-                          {r.pred.label}
-                        </td>
-                        <td className="px-2 py-1.5 text-right">{r.pred.confidence.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-left text-muted-foreground font-sans">
-                          {r.source}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <td className="px-2 py-1.5">
+                            {r.id}
+                            {isBest && <span className="ml-1 text-qc-positive">★</span>}
+                          </td>
+                          <td className="px-2 py-1.5 text-right">{r.comp.Al.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-right">{r.comp.Cu.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-right">{r.comp.Fe.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-right">{r.comp.Mn.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-right">{tot.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-right">{r.e_a.toFixed(3)}</td>
+                          <td className="px-2 py-1.5 text-left font-sans" style={{ color: r.pred.color }}>
+                            {r.pred.label}
+                          </td>
+                          <td className="px-2 py-1.5 text-right">{r.pred.confidence.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-left text-muted-foreground font-sans">
+                            {r.source}
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
+            )}
+
             {bestQC && (
               <div className="mt-3 text-xs text-qc-positive">
                 ★ Best QC candidate: #{bestQC.id} — Al{bestQC.comp.Al.toFixed(1)} Cu
