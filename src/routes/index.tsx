@@ -1104,6 +1104,8 @@ Rule-based prototype — experimental validation required.
 
           <TsaiRulesPanel comp={comp} desc={{ e_a: desc.e_a, delta: desc.delta }} />
 
+          <CNTPredictor comp={comp} />
+
           <ComparisonPanel
             slots={slots}
             saveSlot={saveSlot}
