@@ -223,9 +223,12 @@ function QCPredictor() {
   const [naoh, setNaoh] = useState(10);
   const [slots, setSlots] = useState<(Slot | null)[]>([null, null, null]);
 
-  const props = useMemo(() => computeProperties(comp, computeDescriptors(comp).e_a, pred.kind === "QC"), [comp, pred]);
-  const stability = useMemo(() => computeStability(comp, computeDescriptors(comp).e_a), [comp]);
-  const leach = useMemo(() => simulateLeaching(comp, pred.kind === "QC", naoh), [comp, pred, naoh]);
+  const desc = useMemo(() => computeDescriptors(comp), [comp]);
+  const pred = useMemo(() => predict(comp, desc.e_a, desc.total), [comp, desc]);
+
+  const props = useMemo(() => computeProperties(comp, desc.e_a, pred.kind === "QC"), [comp, desc.e_a, pred.kind]);
+  const stability = useMemo(() => computeStability(comp, desc.e_a), [comp, desc.e_a]);
+  const leach = useMemo(() => simulateLeaching(comp, pred.kind === "QC", naoh), [comp, pred.kind, naoh]);
 
   const currentSlot: Slot = useMemo(
     () => ({
@@ -254,9 +257,6 @@ function QCPredictor() {
       next[idx] = null;
       return next;
     });
-
-  const desc = useMemo(() => computeDescriptors(comp), [comp]);
-  const pred = useMemo(() => predict(comp, desc.e_a, desc.total), [comp, desc]);
 
   // record to history (debounced)
   useEffect(() => {
