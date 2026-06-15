@@ -35,6 +35,7 @@ import {
   QCTypeIndicator,
   ReferencesPanel,
 } from "@/components/qc-extras";
+import { CNTPredictor } from "@/components/cnt-predictor";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -1102,6 +1103,8 @@ Rule-based prototype — experimental validation required.
           />
 
           <TsaiRulesPanel comp={comp} desc={{ e_a: desc.e_a, delta: desc.delta }} />
+
+          <CNTPredictor comp={comp} />
 
           <ComparisonPanel
             slots={slots}
