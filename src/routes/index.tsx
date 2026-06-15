@@ -36,6 +36,10 @@ import {
   ReferencesPanel,
 } from "@/components/qc-extras";
 import { CNTPredictor } from "@/components/cnt-predictor";
+import { XRDVisualizer } from "@/components/xrd-visualizer";
+import { FYPTracker } from "@/components/fyp-tracker";
+import { AIAnalysis } from "@/components/ai-analysis";
+import { SplashScreen } from "@/components/splash-screen";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -518,8 +522,33 @@ Rule-based prototype — experimental validation required.
 </body></html>`;
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === "l") {
+        e.preventDefault();
+        const allPresets = PRESETS.flatMap((g) => g.items);
+        const idx = allPresets.findIndex((p) => p.label === loadedFrom);
+        const next = allPresets[(idx + 1) % allPresets.length];
+        if (next) loadPreset(next);
+      } else if (k === "n") {
+        e.preventDefault();
+        setComp(autoNormalize(comp));
+      } else if (k === "e") {
+        e.preventDefault();
+        exportCSV();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comp, loadedFrom]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SplashScreen />
       {/* HEADER */}
       <header className="penrose-bg border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
