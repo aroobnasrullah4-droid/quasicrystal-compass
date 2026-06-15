@@ -573,6 +573,19 @@ Rule-based prototype — experimental validation required.
                 <span className="text-muted-foreground">| MME Department</span>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-[10px] font-mono text-sky-300"
+                title="v1.0: Rule-based | v2.0: + XRD + Tracker + AI | v3.0 (planned): Real ML model"
+              >
+                v2.0 — Final
+              </span>
+              <span
+                className="hidden md:inline-block rounded-full border border-border bg-secondary/40 px-2 py-1 text-[10px] text-muted-foreground"
+                title="Keyboard shortcuts:&#10;Ctrl+L: Load next preset&#10;Ctrl+N: Auto-normalize&#10;Ctrl+E: Export CSV&#10;Ctrl+Shift+A: Ask AI"
+              >
+                ⌨ Shortcuts
+              </span>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="border-border bg-secondary hover:bg-secondary/80">
