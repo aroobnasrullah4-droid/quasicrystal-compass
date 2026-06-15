@@ -634,10 +634,12 @@ Rule-based prototype — experimental validation required.
                 Derived descriptors
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <DescCard label="e/a ratio" value={desc.e_a.toFixed(3)} />
-                <DescCard label="VEC" value={desc.vec.toFixed(3)} />
-                <DescCard label="Avg. EN" value={desc.en.toFixed(3)} />
-                <DescCard label="Avg. radius" value={`${desc.radius.toFixed(1)} pm`} />
+                <DescCard label="e/a ratio" value={desc.e_a.toFixed(3)} hint="Target 1.86" />
+                <DescCard label="VEC" value={desc.vec.toFixed(3)} hint="Valence e⁻ conc." />
+                <DescCard label="Avg. EN" value={desc.en.toFixed(3)} hint="Pauling" />
+                <DescCard label="Avg. radius" value={`${desc.radius.toFixed(1)}`} hint="pm" />
+                <DescCard label="δ (size mismatch)" value={`${desc.delta.toFixed(2)}%`} hint="Low δ → solid sol." />
+                <DescCard label="ΔS_mix" value={desc.entropy.toFixed(2)} hint="J/mol·K" />
               </div>
             </div>
           </section>
