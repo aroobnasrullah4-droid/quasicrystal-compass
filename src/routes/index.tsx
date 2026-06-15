@@ -28,6 +28,13 @@ import {
   ExportPanel,
   type Slot,
 } from "@/components/qc-modules";
+import {
+  MLDiscoveryPanel,
+  DopantExplorer,
+  TsaiRulesPanel,
+  QCTypeIndicator,
+  ReferencesPanel,
+} from "@/components/qc-extras";
 
 export const Route = createFileRoute("/")({
   head: () => ({
