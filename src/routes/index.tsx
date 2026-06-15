@@ -28,6 +28,13 @@ import {
   ExportPanel,
   type Slot,
 } from "@/components/qc-modules";
+import {
+  MLDiscoveryPanel,
+  DopantExplorer,
+  TsaiRulesPanel,
+  QCTypeIndicator,
+  ReferencesPanel,
+} from "@/components/qc-extras";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -343,6 +350,28 @@ function QCPredictor() {
     setComp({ ...r.comp });
     setSource(r.source);
     setLoadedFrom(null);
+  };
+
+  const loadExternalComp = (c: Comp, label: string) => {
+    setComp({ ...c });
+    setMode("literature");
+    setSource("Literature");
+    setLoadedFrom(label);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const predictFromExt = (c: Comp) => {
+    const d = computeDescriptors(c);
+    const p = predict(c, d.e_a, d.total);
+    const pr = computeProperties(c, d.e_a, p.kind === "QC");
+    return {
+      label: p.label,
+      confidence: p.confidence,
+      color: p.color,
+      kind: p.kind,
+      ea: d.e_a,
+      api: pr.antibacterial,
+    };
   };
 
   // Pulse on prediction change
@@ -785,6 +814,8 @@ Rule-based prototype — experimental validation required.
                   ⚠ {pred.warning}
                 </div>
               )}
+
+              {pred.kind === "QC" && <QCTypeIndicator />}
             </div>
 
             {/* Hume-Rothery gauge */}
@@ -1059,6 +1090,19 @@ Rule-based prototype — experimental validation required.
             )}
           </section>
 
+          <MLDiscoveryPanel loadComp={loadExternalComp} />
+
+          <DopantExplorer
+            currentComp={comp}
+            currentEa={desc.e_a}
+            currentPhase={pred.label}
+            currentConf={pred.confidence}
+            currentApi={props.antibacterial}
+            predictFromExt={predictFromExt}
+          />
+
+          <TsaiRulesPanel comp={comp} desc={{ e_a: desc.e_a, delta: desc.delta }} />
+
           <ComparisonPanel
             slots={slots}
             saveSlot={saveSlot}
@@ -1067,7 +1111,10 @@ Rule-based prototype — experimental validation required.
           />
 
           <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
+
+          <ReferencesPanel />
         </div>
+
 
 
         <footer className="mt-8 border-t border-border pt-4 text-center text-xs text-muted-foreground">
