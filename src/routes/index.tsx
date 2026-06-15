@@ -35,6 +35,7 @@ import {
   QCTypeIndicator,
   ReferencesPanel,
 } from "@/components/qc-extras";
+import { CNTPredictor } from "@/components/cnt-predictor";
 
 export const Route = createFileRoute("/")({
   head: () => ({
