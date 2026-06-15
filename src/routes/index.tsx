@@ -17,6 +17,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  computeProperties,
+  computeStability,
+  simulateLeaching,
+  PropertiesPanel,
+  StabilityPanel,
+  LeachingPanel,
+  ComparisonPanel,
+  ExportPanel,
+  type Slot,
+} from "@/components/qc-modules";
 
 export const Route = createFileRoute("/")({
   head: () => ({
