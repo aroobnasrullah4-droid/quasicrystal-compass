@@ -36,6 +36,10 @@ import {
   ReferencesPanel,
 } from "@/components/qc-extras";
 import { CNTPredictor } from "@/components/cnt-predictor";
+import { XRDVisualizer } from "@/components/xrd-visualizer";
+import { FYPTracker } from "@/components/fyp-tracker";
+import { AIAnalysis } from "@/components/ai-analysis";
+import { SplashScreen } from "@/components/splash-screen";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -518,8 +522,33 @@ Rule-based prototype — experimental validation required.
 </body></html>`;
   };
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === "l") {
+        e.preventDefault();
+        const allPresets = PRESETS.flatMap((g) => g.items);
+        const idx = allPresets.findIndex((p) => p.label === loadedFrom);
+        const next = allPresets[(idx + 1) % allPresets.length];
+        if (next) loadPreset(next);
+      } else if (k === "n") {
+        e.preventDefault();
+        setComp(autoNormalize(comp));
+      } else if (k === "e") {
+        e.preventDefault();
+        exportCSV();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comp, loadedFrom]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <SplashScreen />
       {/* HEADER */}
       <header className="penrose-bg border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -544,6 +573,19 @@ Rule-based prototype — experimental validation required.
                 <span className="text-muted-foreground">| MME Department</span>
               </div>
             </div>
+            <div className="flex items-center gap-2">
+              <span
+                className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-[10px] font-mono text-sky-300"
+                title="v1.0: Rule-based | v2.0: + XRD + Tracker + AI | v3.0 (planned): Real ML model"
+              >
+                v2.0 — Final
+              </span>
+              <span
+                className="hidden md:inline-block rounded-full border border-border bg-secondary/40 px-2 py-1 text-[10px] text-muted-foreground"
+                title="Keyboard shortcuts:&#10;Ctrl+L: Load next preset&#10;Ctrl+N: Auto-normalize&#10;Ctrl+E: Export CSV&#10;Ctrl+Shift+A: Ask AI"
+              >
+                ⌨ Shortcuts
+              </span>
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="border-border bg-secondary hover:bg-secondary/80">
@@ -577,6 +619,7 @@ Rule-based prototype — experimental validation required.
                 </DialogHeader>
               </DialogContent>
             </Dialog>
+            </div>
 
           </div>
         </div>
@@ -818,6 +861,17 @@ Rule-based prototype — experimental validation required.
 
               {pred.kind === "QC" && <QCTypeIndicator />}
             </div>
+
+            {pred.kind !== "INVALID" && (
+              <AIAnalysis
+                comp={comp}
+                phase={pred.label}
+                confidence={pred.confidence}
+                e_a={desc.e_a}
+                stabilityPassed={stability.passed}
+                api={props.antibacterial}
+              />
+            )}
 
             {/* Hume-Rothery gauge */}
             <div className="mt-5 rounded-lg border border-border bg-secondary/30 p-4">
@@ -1105,6 +1159,10 @@ Rule-based prototype — experimental validation required.
           <TsaiRulesPanel comp={comp} desc={{ e_a: desc.e_a, delta: desc.delta }} />
 
           <CNTPredictor comp={comp} />
+
+          <XRDVisualizer phaseKind={pred.kind === "INVALID" ? "ORDINARY" : pred.kind} cntYield={pred.kind === "QC" ? 20 : 0} />
+
+          <FYPTracker />
 
           <ComparisonPanel
             slots={slots}
