@@ -1088,6 +1088,19 @@ Rule-based prototype — experimental validation required.
             )}
           </section>
 
+          <MLDiscoveryPanel loadComp={loadExternalComp} />
+
+          <DopantExplorer
+            currentComp={comp}
+            currentEa={desc.e_a}
+            currentPhase={pred.label}
+            currentConf={pred.confidence}
+            currentApi={props.antibacterial}
+            predictFromExt={predictFromExt}
+          />
+
+          <TsaiRulesPanel comp={comp} desc={{ e_a: desc.e_a, delta: desc.delta }} />
+
           <ComparisonPanel
             slots={slots}
             saveSlot={saveSlot}
@@ -1096,7 +1109,10 @@ Rule-based prototype — experimental validation required.
           />
 
           <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
+
+          <ReferencesPanel />
         </div>
+
 
 
         <footer className="mt-8 border-t border-border pt-4 text-center text-xs text-muted-foreground">
