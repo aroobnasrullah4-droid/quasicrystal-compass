@@ -939,25 +939,40 @@ Rule-based prototype — experimental validation required.
           {/* PANEL 4 — HISTORY */}
           <section className="lg:col-span-12 rounded-xl border border-border bg-card p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 04</div>
-                <h2 className="text-lg font-semibold">Session History</h2>
-                <p className="text-xs text-muted-foreground">
-                  {history.length} composition{history.length !== 1 ? "s" : ""} tested this session
-                </p>
-              </div>
+              <button
+                onClick={() => setShowHistory((s) => !s)}
+                className="flex items-center gap-2 text-left"
+              >
+                <span className="text-muted-foreground">{showHistory ? "▾" : "▸"}</span>
+                <div>
+                  <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 04</div>
+                  <h2 className="text-lg font-semibold">
+                    📋 Session History ({history.length} composition{history.length !== 1 ? "s" : ""})
+                  </h2>
+                </div>
+              </button>
               <div className="flex flex-wrap gap-2">
+                <select
+                  value={historyFilter}
+                  onChange={(e) => setHistoryFilter(e.target.value as typeof historyFilter)}
+                  className="rounded-md border border-border bg-secondary px-2 py-1 text-xs"
+                >
+                  <option value="ALL">All phases</option>
+                  <option value="QC">QC only</option>
+                  <option value="APPROX">Approximant only</option>
+                  <option value="ORDINARY">Non-QC only</option>
+                </select>
                 <button
                   onClick={copyColab}
                   className="rounded-md border border-border bg-secondary px-3 py-1.5 text-xs hover:bg-secondary/70"
                 >
-                  Copy to Colab
+                  🐍 Copy Colab
                 </button>
                 <button
                   onClick={exportCSV}
                   className="rounded-md border border-border bg-secondary px-3 py-1.5 text-xs hover:bg-secondary/70"
                 >
-                  Export CSV
+                  📥 Export CSV
                 </button>
                 <button
                   onClick={() => setHistory([])}
@@ -967,6 +982,7 @@ Rule-based prototype — experimental validation required.
                 </button>
               </div>
             </div>
+
 
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
