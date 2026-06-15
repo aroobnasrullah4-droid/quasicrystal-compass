@@ -704,13 +704,16 @@ Rule-based prototype — experimental validation required.
             <p className="text-sm text-muted-foreground mb-4">Heuristic rule-based inference</p>
 
             <div
-              className="rounded-xl border p-5"
+              key={pulseKey}
+              className="rounded-xl border p-5 animate-scale-in"
               style={{
                 borderColor: pred.color + "55",
                 background: `linear-gradient(135deg, ${pred.color}14, transparent)`,
+                boxShadow: pred.kind !== "INVALID" ? `0 0 24px -8px ${pred.color}55` : "none",
+                transition: "box-shadow 300ms ease, border-color 300ms ease",
               }}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span
                   className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
                   style={{
@@ -719,7 +722,7 @@ Rule-based prototype — experimental validation required.
                     border: `1px solid ${pred.color}44`,
                   }}
                 >
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: pred.color }} />
+                  <span className="text-base leading-none">{pred.icon}</span>
                   {pred.kind === "QC"
                     ? "QC POSITIVE"
                     : pred.kind === "APPROX"
@@ -728,15 +731,24 @@ Rule-based prototype — experimental validation required.
                         ? "NON-QC"
                         : "INVALID INPUT"}
                 </span>
-                <span className="data-mono text-xs text-muted-foreground">
-                  Al{comp.Al.toFixed(0)}Cu{comp.Cu.toFixed(0)}Fe{comp.Fe.toFixed(0)}Mn{comp.Mn.toFixed(0)}
-                </span>
+                <div className="flex items-center gap-2">
+                  {loadedFrom && (
+                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      📚 Loaded from: {loadedFrom}
+                    </span>
+                  )}
+                  <span className="data-mono text-xs text-muted-foreground">
+                    Al{comp.Al.toFixed(0)}Cu{comp.Cu.toFixed(0)}Fe{comp.Fe.toFixed(0)}Mn{comp.Mn.toFixed(0)}
+                  </span>
+                </div>
               </div>
 
-              <h3 className="mt-4 text-3xl font-bold" style={{ color: pred.color }}>
+              <h3 className="mt-4 text-3xl font-bold flex items-center gap-3" style={{ color: pred.color }}>
+                <span className="text-4xl">{pred.icon}</span>
                 {pred.label}
               </h3>
               <p className="mt-2 text-sm text-muted-foreground">{pred.reasoning}</p>
+
 
               {pred.kind !== "INVALID" && (
                 <div className="mt-5 flex items-center gap-5">
