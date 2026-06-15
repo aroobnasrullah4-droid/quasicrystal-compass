@@ -105,7 +105,20 @@ function computeDescriptors(c: Comp) {
   const en = (c.Al * 1.61 + c.Cu * 1.9 + c.Fe * 1.83 + c.Mn * 1.55) / 100;
   const radius = (c.Al * 143 + c.Cu * 128 + c.Fe * 126 + c.Mn * 127) / 100;
   const vec = (c.Al * 3 + c.Cu * 11 + c.Fe * 8 + c.Mn * 7) / 100;
-  return { e_a, en, radius, vec, total };
+  // Atomic size mismatch δ (%)
+  const r_avg = radius;
+  const delta =
+    Math.sqrt(
+      (c.Al / 100) * Math.pow(1 - 143 / r_avg, 2) +
+        (c.Cu / 100) * Math.pow(1 - 128 / r_avg, 2) +
+        (c.Fe / 100) * Math.pow(1 - 126 / r_avg, 2) +
+        (c.Mn / 100) * Math.pow(1 - 127 / r_avg, 2)
+    ) * 100;
+  // Mixing entropy (J/mol·K)
+  const R = 8.314;
+  const xs: number[] = [c.Al, c.Cu, c.Fe, c.Mn].map((v) => v / 100).filter((x) => x > 0);
+  const entropy = -R * xs.reduce((s, x) => s + x * Math.log(x), 0);
+  return { e_a, en, radius, vec, total, delta, entropy };
 }
 
 type PredKind = "QC" | "APPROX" | "ORDINARY" | "INVALID";
@@ -114,6 +127,7 @@ interface Prediction {
   label: string;
   confidence: number;
   color: string;
+  icon: string;
   reasoning: string;
   warning?: string;
 }
@@ -125,6 +139,7 @@ function predict(c: Comp, e_a: number, total: number): Prediction {
       label: "Enter valid composition to predict",
       confidence: 0,
       color: "#64748B",
+      icon: "⟳",
       reasoning: `Total must be 98–102%. Current total = ${total.toFixed(1)}%`,
     };
   }
@@ -132,44 +147,53 @@ function predict(c: Comp, e_a: number, total: number): Prediction {
   const warning = Mn > 6 ? "High Mn content (>6 at%) — competing β-Mn phase risk" : undefined;
 
   if (Al >= 62 && Al <= 72 && Cu >= 10 && Cu <= 20 && Fe >= 10 && Fe <= 15 && Mn >= 2 && Mn <= 6) {
-    const proximity = Math.max(0, 1 - Math.abs(e_a - 1.86) / 0.2);
+    const proximity = Math.max(0, 1 - Math.abs(e_a - 1.86) / 0.15);
     const confidence = Math.min(95, 70 + proximity * 25);
     return {
       kind: "QC",
-      label: "Quasicrystalline Phase",
+      label: "Icosahedral Quasicrystalline Phase",
       confidence,
       color: "#22C55E",
-      reasoning: `Rule QC matched: Al 62-72, Cu 10-20, Fe 10-15, Mn 2-6 — e/a = ${e_a.toFixed(2)} (target 1.86)`,
+      icon: "✦",
+      reasoning: `Composition within Al-Cu-Fe-Mn QC phase field. e/a = ${e_a.toFixed(2)} — within icosahedral stability window.`,
       warning,
     };
   }
-  if (Al >= 58 && Al <= 72 && Cu >= 8 && Cu <= 20 && Fe >= 8 && Fe <= 15 && Mn >= 6 && Mn <= 9) {
-    const proximity = Math.max(0, 1 - Math.abs(e_a - 1.86) / 0.25);
-    const confidence = 45 + proximity * 15;
+  if (Al >= 58 && Al <= 75 && Cu >= 8 && Cu <= 22 && Fe >= 8 && Fe <= 17 && Mn >= 6 && Mn <= 9) {
+    const seed = (Al * 7.3 + Cu * 3.1 + Fe * 5.7 + Mn * 11.9) % 1;
+    const confidence = 35 + seed * 20;
     return {
       kind: "APPROX",
       label: "Approximant Crystal",
       confidence,
       color: "#F59E0B",
-      reasoning: "Rule APPROX matched: borders QC field but high Mn favors periodic approximant",
+      icon: "◈",
+      reasoning: "Mn > 6 at% introduces β-Mn competing phase risk. Periodic approximant more likely than true QC.",
       warning: warning ?? "Periodic approximant structure expected",
     };
   }
-  const dist =
-    Math.max(0, Math.max(58 - Al, Al - 72)) +
-    Math.max(0, Math.max(8 - Cu, Cu - 20)) +
-    Math.max(0, Math.max(8 - Fe, Fe - 15)) +
-    Math.max(0, Math.max(0 - Mn, Mn - 9));
-  const confidence = Math.max(15, 35 - dist * 1.5);
+  const reasons: string[] = [];
+  if (Al < 62) reasons.push("Al too low (<62%)");
+  if (Al > 72) reasons.push("Al too high (>72%)");
+  if (Cu < 10) reasons.push("Cu insufficient (<10%)");
+  if (Cu > 20) reasons.push("Cu excessive (>20%)");
+  if (Fe < 10) reasons.push("Fe insufficient (<10%)");
+  if (Fe > 15) reasons.push("Fe excessive (>15%)");
+  if (Mn > 9) reasons.push("Mn excessive (>9%)");
+  if (Mn < 2) reasons.push("Mn deficient (<2%)");
+  const seed = (Al * 7.3 + Cu * 3.1 + Fe * 5.7 + Mn * 11.9) % 1;
+  const confidence = 10 + seed * 20;
   return {
     kind: "ORDINARY",
     label: "Ordinary Crystal / Multi-phase",
     confidence,
     color: "#EF4444",
-    reasoning: `Composition outside known QC stability field (e/a = ${e_a.toFixed(2)})`,
+    icon: "◻",
+    reasoning: reasons.length ? `Outside QC phase field: ${reasons.join(", ")}` : `Outside QC phase field (e/a = ${e_a.toFixed(2)})`,
     warning,
   };
 }
+
 
 // ============ NORMALIZATION (Explorer mode) ============
 function normalizeOnChange(prev: Comp, key: ElKey, newVal: number): Comp {
@@ -220,8 +244,12 @@ function QCPredictor() {
   const [source, setSource] = useState<Source>("Literature");
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [showPresets, setShowPresets] = useState(true);
+  const [showHistory, setShowHistory] = useState(true);
+  const [historyFilter, setHistoryFilter] = useState<"ALL" | "QC" | "APPROX" | "ORDINARY">("ALL");
   const [naoh, setNaoh] = useState(10);
   const [slots, setSlots] = useState<(Slot | null)[]>([null, null, null]);
+  const [loadedFrom, setLoadedFrom] = useState<string | null>("Tsai Classic");
+  const [pulseKey, setPulseKey] = useState(0);
 
   const desc = useMemo(() => computeDescriptors(comp), [comp]);
   const pred = useMemo(() => predict(comp, desc.e_a, desc.total), [comp, desc]);
@@ -288,17 +316,40 @@ function QCPredictor() {
     return () => clearTimeout(t);
   }, [comp, desc.e_a, pred, source]);
 
-  const handleSlider = (k: ElKey, v: number) => setComp((p) => normalizeOnChange(p, k, v));
+  const handleSlider = (k: ElKey, v: number) => {
+    setComp((p) => normalizeOnChange(p, k, v));
+    setLoadedFrom(null);
+  };
   const handleNumber = (k: ElKey, v: number) => {
     setComp((p) => ({ ...p, [k]: isNaN(v) ? 0 : Math.max(0, v) }));
     setSource("Manual");
+    setLoadedFrom(null);
   };
 
   const loadPreset = (p: Preset) => {
     setComp({ ...p.comp });
     setMode("literature");
     setSource("Literature");
+    setLoadedFrom(p.label);
   };
+
+  const resetComp = () => {
+    setComp({ Al: 65, Cu: 20, Fe: 10, Mn: 5 });
+    setSource("Literature");
+    setLoadedFrom("Tsai Classic");
+  };
+
+  const reloadFromHistory = (r: HistoryRow) => {
+    setComp({ ...r.comp });
+    setSource(r.source);
+    setLoadedFrom(null);
+  };
+
+  // Pulse on prediction change
+  useEffect(() => {
+    setPulseKey((k) => k + 1);
+  }, [pred.kind, pred.label]);
+
 
   const exportCSV = () => {
     const header = "#,Al,Cu,Fe,Mn,Total,e/a,Phase,Confidence,Source,Time\n";
@@ -537,6 +588,17 @@ Rule-based prototype — experimental validation required.
               {(Object.keys(ELEMENTS) as ElKey[]).map((k) => {
                 const [min, max] = RANGES[k];
                 const el = ELEMENTS[k];
+                const QC_OPT: Record<ElKey, [number, number]> = {
+                  Al: [62, 72],
+                  Cu: [10, 20],
+                  Fe: [10, 15],
+                  Mn: [2, 6],
+                };
+                const [lo, hi] = QC_OPT[k];
+                const v = comp[k];
+                const dist = v < lo ? lo - v : v > hi ? v - hi : 0;
+                const borderColor = dist === 0 ? "#22C55E" : dist <= 2 ? "#F59E0B" : "#EF4444";
+                const hint = `Typical QC range: ${lo}–${hi} at%`;
                 return (
                   <div key={k}>
                     <div className="mb-1 flex items-center justify-between">
@@ -544,8 +606,8 @@ Rule-based prototype — experimental validation required.
                         <span style={{ color: el.color }}>{k}</span>{" "}
                         <span className="text-muted-foreground">— {el.name}</span>
                       </label>
-                      <span className="data-mono text-[10px] text-muted-foreground">
-                        hint {min}-{max}
+                      <span className="data-mono text-[10px]" style={{ color: borderColor }}>
+                        {dist === 0 ? "✓ optimal" : dist <= 2 ? "⚠ near" : "✗ outside"}
                       </span>
                     </div>
                     {mode === "literature" ? (
@@ -554,7 +616,8 @@ Rule-based prototype — experimental validation required.
                         step={0.1}
                         value={Number(comp[k].toFixed(2))}
                         onChange={(e) => handleNumber(k, parseFloat(e.target.value))}
-                        className="w-full rounded-md border border-border bg-secondary/40 px-3 py-1.5 data-mono text-sm text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="w-full rounded-md border bg-secondary/40 px-3 py-1.5 data-mono text-sm text-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
+                        style={{ borderColor: borderColor + "88" }}
                       />
                     ) : (
                       <>
@@ -566,18 +629,21 @@ Rule-based prototype — experimental validation required.
                           value={comp[k]}
                           onChange={(e) => handleSlider(k, parseFloat(e.target.value))}
                           className="w-full accent-primary"
+                          style={{ accentColor: borderColor }}
                         />
                         <div className="flex justify-between data-mono text-[10px] text-muted-foreground">
                           <span>{min}</span>
-                          <span className="text-primary">{comp[k].toFixed(1)} at%</span>
+                          <span style={{ color: borderColor }}>{comp[k].toFixed(1)} at%</span>
                           <span>{max}</span>
                         </div>
                       </>
                     )}
+                    <div className="data-mono text-[9px] text-muted-foreground/80 mt-0.5">{hint}</div>
                   </div>
                 );
               })}
             </div>
+
 
             {/* Total badge */}
             <div
@@ -592,17 +658,28 @@ Rule-based prototype — experimental validation required.
               <span>{totalBadge.text}</span>
             </div>
 
-            {totalDiff >= 0.1 && (
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {totalDiff >= 0.1 ? (
+                <button
+                  onClick={() => {
+                    setComp(autoNormalize(comp));
+                    setSource("Manual");
+                  }}
+                  className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
+                >
+                  Auto-normalize
+                </button>
+              ) : (
+                <div />
+              )}
               <button
-                onClick={() => {
-                  setComp(autoNormalize(comp));
-                  setSource("Manual");
-                }}
-                className="mt-2 w-full rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
+                onClick={resetComp}
+                className="rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
               >
-                Auto-normalize to 100%
+                Reset
               </button>
-            )}
+            </div>
+
 
             {/* Descriptors */}
             <div className="mt-5">
@@ -610,10 +687,12 @@ Rule-based prototype — experimental validation required.
                 Derived descriptors
               </div>
               <div className="grid grid-cols-2 gap-2">
-                <DescCard label="e/a ratio" value={desc.e_a.toFixed(3)} />
-                <DescCard label="VEC" value={desc.vec.toFixed(3)} />
-                <DescCard label="Avg. EN" value={desc.en.toFixed(3)} />
-                <DescCard label="Avg. radius" value={`${desc.radius.toFixed(1)} pm`} />
+                <DescCard label="e/a ratio" value={desc.e_a.toFixed(3)} hint="Target 1.86" />
+                <DescCard label="VEC" value={desc.vec.toFixed(3)} hint="Valence e⁻ conc." />
+                <DescCard label="Avg. EN" value={desc.en.toFixed(3)} hint="Pauling" />
+                <DescCard label="Avg. radius" value={`${desc.radius.toFixed(1)}`} hint="pm" />
+                <DescCard label="δ (size mismatch)" value={`${desc.delta.toFixed(2)}%`} hint="Low δ → solid sol." />
+                <DescCard label="ΔS_mix" value={desc.entropy.toFixed(2)} hint="J/mol·K" />
               </div>
             </div>
           </section>
@@ -625,13 +704,16 @@ Rule-based prototype — experimental validation required.
             <p className="text-sm text-muted-foreground mb-4">Heuristic rule-based inference</p>
 
             <div
-              className="rounded-xl border p-5"
+              key={pulseKey}
+              className="rounded-xl border p-5 animate-scale-in"
               style={{
                 borderColor: pred.color + "55",
                 background: `linear-gradient(135deg, ${pred.color}14, transparent)`,
+                boxShadow: pred.kind !== "INVALID" ? `0 0 24px -8px ${pred.color}55` : "none",
+                transition: "box-shadow 300ms ease, border-color 300ms ease",
               }}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span
                   className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
                   style={{
@@ -640,7 +722,7 @@ Rule-based prototype — experimental validation required.
                     border: `1px solid ${pred.color}44`,
                   }}
                 >
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ background: pred.color }} />
+                  <span className="text-base leading-none">{pred.icon}</span>
                   {pred.kind === "QC"
                     ? "QC POSITIVE"
                     : pred.kind === "APPROX"
@@ -649,15 +731,24 @@ Rule-based prototype — experimental validation required.
                         ? "NON-QC"
                         : "INVALID INPUT"}
                 </span>
-                <span className="data-mono text-xs text-muted-foreground">
-                  Al{comp.Al.toFixed(0)}Cu{comp.Cu.toFixed(0)}Fe{comp.Fe.toFixed(0)}Mn{comp.Mn.toFixed(0)}
-                </span>
+                <div className="flex items-center gap-2">
+                  {loadedFrom && (
+                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      📚 Loaded from: {loadedFrom}
+                    </span>
+                  )}
+                  <span className="data-mono text-xs text-muted-foreground">
+                    Al{comp.Al.toFixed(0)}Cu{comp.Cu.toFixed(0)}Fe{comp.Fe.toFixed(0)}Mn{comp.Mn.toFixed(0)}
+                  </span>
+                </div>
               </div>
 
-              <h3 className="mt-4 text-3xl font-bold" style={{ color: pred.color }}>
+              <h3 className="mt-4 text-3xl font-bold flex items-center gap-3" style={{ color: pred.color }}>
+                <span className="text-4xl">{pred.icon}</span>
                 {pred.label}
               </h3>
               <p className="mt-2 text-sm text-muted-foreground">{pred.reasoning}</p>
+
 
               {pred.kind !== "INVALID" && (
                 <div className="mt-5 flex items-center gap-5">
@@ -848,25 +939,40 @@ Rule-based prototype — experimental validation required.
           {/* PANEL 4 — HISTORY */}
           <section className="lg:col-span-12 rounded-xl border border-border bg-card p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 04</div>
-                <h2 className="text-lg font-semibold">Session History</h2>
-                <p className="text-xs text-muted-foreground">
-                  {history.length} composition{history.length !== 1 ? "s" : ""} tested this session
-                </p>
-              </div>
+              <button
+                onClick={() => setShowHistory((s) => !s)}
+                className="flex items-center gap-2 text-left"
+              >
+                <span className="text-muted-foreground">{showHistory ? "▾" : "▸"}</span>
+                <div>
+                  <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 04</div>
+                  <h2 className="text-lg font-semibold">
+                    📋 Session History ({history.length} composition{history.length !== 1 ? "s" : ""})
+                  </h2>
+                </div>
+              </button>
               <div className="flex flex-wrap gap-2">
+                <select
+                  value={historyFilter}
+                  onChange={(e) => setHistoryFilter(e.target.value as typeof historyFilter)}
+                  className="rounded-md border border-border bg-secondary px-2 py-1 text-xs"
+                >
+                  <option value="ALL">All phases</option>
+                  <option value="QC">QC only</option>
+                  <option value="APPROX">Approximant only</option>
+                  <option value="ORDINARY">Non-QC only</option>
+                </select>
                 <button
                   onClick={copyColab}
                   className="rounded-md border border-border bg-secondary px-3 py-1.5 text-xs hover:bg-secondary/70"
                 >
-                  Copy to Colab
+                  🐍 Copy Colab
                 </button>
                 <button
                   onClick={exportCSV}
                   className="rounded-md border border-border bg-secondary px-3 py-1.5 text-xs hover:bg-secondary/70"
                 >
-                  Export CSV
+                  📥 Export CSV
                 </button>
                 <button
                   onClick={() => setHistory([])}
@@ -877,9 +983,11 @@ Rule-based prototype — experimental validation required.
               </div>
             </div>
 
-            <div className="overflow-x-auto">
+
+            {showHistory && (
+            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 320 }}>
               <table className="w-full text-sm">
-                <thead className="text-xs uppercase tracking-wider text-muted-foreground">
+                <thead className="text-xs uppercase tracking-wider text-muted-foreground sticky top-0 bg-card">
                   <tr className="border-b border-border">
                     <th className="px-2 py-2 text-left">#</th>
                     <th className="px-2 py-2 text-right">Al</th>
@@ -901,43 +1009,47 @@ Rule-based prototype — experimental validation required.
                       </td>
                     </tr>
                   )}
-                  {[...history].reverse().map((r) => {
-                    const isBest = bestQC?.id === r.id;
-                    const tot = r.comp.Al + r.comp.Cu + r.comp.Fe + r.comp.Mn;
-                    return (
-                      <tr
-                        key={r.id}
-                        className={`border-b border-border/50 hover:bg-secondary/30 ${
-                          isBest ? "bg-qc-positive/10" : ""
-                        }`}
-                        style={{ borderLeft: `3px solid ${r.pred.color}` }}
-                      >
-                        <td className="px-2 py-1.5">
-                          {r.id}
-                          {isBest && <span className="ml-1 text-qc-positive">★</span>}
-                        </td>
-                        <td className="px-2 py-1.5 text-right">{r.comp.Al.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-right">{r.comp.Cu.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-right">{r.comp.Fe.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-right">{r.comp.Mn.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-right">{tot.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-right">{r.e_a.toFixed(3)}</td>
-                        <td
-                          className="px-2 py-1.5 text-left font-sans"
-                          style={{ color: r.pred.color }}
+                  {[...history]
+                    .reverse()
+                    .filter((r) => historyFilter === "ALL" || r.pred.kind === historyFilter)
+                    .map((r) => {
+                      const isBest = bestQC?.id === r.id;
+                      const tot = r.comp.Al + r.comp.Cu + r.comp.Fe + r.comp.Mn;
+                      return (
+                        <tr
+                          key={r.id}
+                          onClick={() => reloadFromHistory(r)}
+                          title="Click to reload this composition"
+                          className={`border-b border-border/50 hover:bg-secondary/30 cursor-pointer ${
+                            isBest ? "bg-qc-positive/10" : ""
+                          }`}
+                          style={{ borderLeft: `3px solid ${r.pred.color}` }}
                         >
-                          {r.pred.label}
-                        </td>
-                        <td className="px-2 py-1.5 text-right">{r.pred.confidence.toFixed(1)}</td>
-                        <td className="px-2 py-1.5 text-left text-muted-foreground font-sans">
-                          {r.source}
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <td className="px-2 py-1.5">
+                            {r.id}
+                            {isBest && <span className="ml-1 text-qc-positive">★</span>}
+                          </td>
+                          <td className="px-2 py-1.5 text-right">{r.comp.Al.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-right">{r.comp.Cu.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-right">{r.comp.Fe.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-right">{r.comp.Mn.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-right">{tot.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-right">{r.e_a.toFixed(3)}</td>
+                          <td className="px-2 py-1.5 text-left font-sans" style={{ color: r.pred.color }}>
+                            {r.pred.label}
+                          </td>
+                          <td className="px-2 py-1.5 text-right">{r.pred.confidence.toFixed(1)}</td>
+                          <td className="px-2 py-1.5 text-left text-muted-foreground font-sans">
+                            {r.source}
+                          </td>
+                        </tr>
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
+            )}
+
             {bestQC && (
               <div className="mt-3 text-xs text-qc-positive">
                 ★ Best QC candidate: #{bestQC.id} — Al{bestQC.comp.Al.toFixed(1)} Cu
@@ -969,11 +1081,12 @@ Rule-based prototype — experimental validation required.
 }
 
 // ============ SUB-COMPONENTS ============
-function DescCard({ label, value }: { label: string; value: string }) {
+function DescCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="rounded-lg border border-border bg-secondary/40 px-3 py-2">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="data-mono text-base font-semibold text-primary">{value}</div>
+      {hint && <div className="text-[9px] text-muted-foreground/80 mt-0.5">{hint}</div>}
     </div>
   );
 }

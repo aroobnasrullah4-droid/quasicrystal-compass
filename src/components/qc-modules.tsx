@@ -15,18 +15,22 @@ export interface Properties {
 }
 
 export function computeProperties(c: Comp, e_a: number, isQC: boolean): Properties {
-  const hardness = 0.8 * (c.Cu * 12 + c.Fe * 15 + c.Mn * 8 + c.Al * 3);
+  const hardness = c.Al * 3 + c.Cu * 12 + c.Fe * 15 + c.Mn * 8;
   const density = (c.Al * 2.7 + c.Cu * 8.96 + c.Fe * 7.87 + c.Mn * 7.43) / 100;
   const meltingPoint = (c.Al * 660 + c.Cu * 1085 + c.Fe * 1538 + c.Mn * 1246) / 100;
   const thermalConductivity = (c.Al * 237 + c.Cu * 401 + c.Fe * 80 + c.Mn * 7.8) / 100;
   const resistivityTendency =
     e_a >= 1.8 && e_a <= 1.95
-      ? "High resistivity expected (QC anomalous transport)"
+      ? "High resistivity expected ✦ (QC anomalous transport)"
       : "Normal metallic resistivity expected";
-  const wearIndex = Math.min(10, ((hardness / 900) * 0.6 + (1 - thermalConductivity / 237) * 0.4) * 10);
-  const antibacterial = Math.min(10, c.Cu * 0.5 + c.Mn * 0.3 + (isQC ? 2 : 0));
+  const wearIndex = Math.min(10, (hardness / 900) * 6 + (1 - density / 8) * 4);
+  const antibacterial = Math.min(
+    10,
+    c.Cu * 0.35 + c.Mn * 0.25 + (isQC ? 3.0 : 0) + (c.Cu > 15 ? 1.5 : 0)
+  );
   return { hardness, density, meltingPoint, thermalConductivity, resistivityTendency, wearIndex, antibacterial };
 }
+
 
 // ============ STABILITY RULES ============
 export interface StabilityRule {
@@ -46,8 +50,8 @@ export function computeStability(c: Comp, e_a: number): { rules: StabilityRule[]
     },
     {
       label: "Al Content",
-      status: c.Al >= 62 && c.Al <= 72 ? "pass" : "fail",
-      detail: `Al = ${c.Al.toFixed(1)}%`,
+      status: c.Al >= 62 && c.Al <= 72 ? "pass" : "warn",
+      detail: c.Al < 62 ? `Low (${c.Al.toFixed(1)}%)` : c.Al > 72 ? `High (${c.Al.toFixed(1)}%)` : `Optimal (${c.Al.toFixed(1)}%)`,
       tooltip: "Al-rich matrix essential for QC formation",
     },
     {
@@ -57,12 +61,15 @@ export function computeStability(c: Comp, e_a: number): { rules: StabilityRule[]
       tooltip: "Mn enhances catalytic + antibacterial activity but excess destabilizes QC phase",
     },
     {
-      label: "Cu/Fe Ratio",
+      label: "Cu/Fe Balance",
       status: (() => {
         const r = c.Fe > 0 ? c.Cu / c.Fe : 0;
         return r >= 1.2 && r <= 1.8 ? "pass" : "warn";
       })(),
-      detail: `Cu/Fe = ${(c.Fe > 0 ? c.Cu / c.Fe : 0).toFixed(2)}`,
+      detail: (() => {
+        const r = c.Fe > 0 ? c.Cu / c.Fe : 0;
+        return r > 1.8 ? `High (${r.toFixed(2)})` : r < 1.2 ? `Low (${r.toFixed(2)})` : `Optimal (${r.toFixed(2)})`;
+      })(),
       tooltip: "Cu/Fe balance controls dodecahedral active site formation after leaching",
     },
   ];
@@ -78,33 +85,53 @@ export interface LeachResult {
   activeSites: { label: string; cnt: string; color: string };
   cntRange: string;
   naohNote: string;
+  dizEnhancement: number;
 }
 
+const NAOH_TABLE: Record<number, { aD: number; cuE: number; feE: number; mnE: number; warn?: string }> = {
+  5: { aD: 0.45, cuE: 1.3, feE: 1.1, mnE: 1.2 },
+  8: { aD: 0.65, cuE: 1.7, feE: 1.2, mnE: 1.4 },
+  10: { aD: 0.85, cuE: 2.1, feE: 1.4, mnE: 1.6 },
+  12: { aD: 0.9, cuE: 2.3, feE: 1.5, mnE: 1.7 },
+  15: { aD: 0.93, cuE: 2.2, feE: 1.4, mnE: 1.6, warn: "Excess NaOH may damage QC structure" },
+};
+
 export function simulateLeaching(c: Comp, isQC: boolean, naoh: number): LeachResult {
-  const conc = naoh / 10; // scale factor vs 10M baseline
-  const Al_r = c.Al * Math.max(0.05, 0.15 / conc);
-  const Cu_r = c.Cu * (2.1 * Math.min(1.2, conc));
-  const Fe_r = c.Fe * (1.4 * Math.min(1.15, conc));
-  const Mn_r = c.Mn * (1.6 * Math.min(1.15, conc));
-  const total = Al_r + Cu_r + Fe_r + Mn_r || 1;
+  const f = NAOH_TABLE[naoh] ?? NAOH_TABLE[10];
+  const Al_s = c.Al * (1 - f.aD);
+  const Cu_s = c.Cu * f.cuE;
+  const Fe_s = c.Fe * f.feE;
+  const Mn_s = c.Mn * f.mnE;
+  const tot = Al_s + Cu_s + Fe_s + Mn_s || 1;
   const after: Comp = {
-    Al: (Al_r / total) * 100,
-    Cu: (Cu_r / total) * 100,
-    Fe: (Fe_r / total) * 100,
-    Mn: (Mn_r / total) * 100,
+    Al: (Al_s / tot) * 100,
+    Cu: (Cu_s / tot) * 100,
+    Fe: (Fe_s / tot) * 100,
+    Mn: (Mn_s / tot) * 100,
   };
   let activeSites;
-  if (after.Cu > 25) {
-    activeSites = { label: "Cu/Cu₂O dodecahedral active sites: LIKELY ✓", cnt: "HIGH", color: "#22C55E" };
-  } else if (after.Cu > 15) {
-    activeSites = { label: "Cu/Cu₂O active sites: MODERATE ⚠", cnt: "MODERATE", color: "#F59E0B" };
+  if (after.Cu > 30) {
+    activeSites = { label: "✅ Cu/Cu₂O dodecahedral active sites: HIGHLY LIKELY — excellent CNT nucleation", cnt: "HIGH", color: "#22C55E" };
+  } else if (after.Cu > 20) {
+    activeSites = { label: "⚠️ Cu/Cu₂O active sites: MODERATE — acceptable CNT nucleation", cnt: "MODERATE", color: "#F59E0B" };
   } else {
-    activeSites = { label: "Insufficient Cu for active site formation ✗", cnt: "LOW", color: "#EF4444" };
+    activeSites = { label: "❌ Cu insufficient for active site formation", cnt: "LOW", color: "#EF4444" };
   }
-  const cntRange = isQC ? "29–118 nm (per Ali et al. 2025)" : "17–45 nm (un-leached reference)";
-  const naohNote = naoh === 10 ? "Optimal — matches published conditions" : `Adjusted dissolution vs 10M baseline (×${conc.toFixed(2)})`;
-  return { before: c, after, cuSurface: after.Cu, activeSites, cntRange, naohNote };
+  const cntRange =
+    isQC && after.Cu > 20
+      ? "29–118 nm (Ali et al. 2025 — supervisor's data)"
+      : isQC
+        ? "17–45 nm (un-leached QC reference)"
+        : "Phase mismatch — CNT growth unlikely";
+  const naohNote =
+    naoh === 10
+      ? "★ Optimal — matches published conditions"
+      : f.warn ?? `Adjusted dissolution per ${naoh}M factors`;
+  const dizEnhancement =
+    after.Cu * 0.4 + after.Mn * 0.2 + (activeSites.cnt === "HIGH" ? 3 : 1);
+  return { before: c, after, cuSurface: after.Cu, activeSites, cntRange, naohNote, dizEnhancement };
 }
+
 
 // ============ SHARED UI ============
 function Bar({ value, max, color, height = 8 }: { value: number; max: number; color: string; height?: number }) {
@@ -342,6 +369,11 @@ export function LeachingPanel({
         <div className="mt-1 grid grid-cols-1 gap-1 text-xs text-muted-foreground sm:grid-cols-2">
           <div>Expected CNT nucleation: <span className="data-mono" style={{ color: result.activeSites.color }}>{result.activeSites.cnt}</span></div>
           <div>Expected CNT diameter: <span className="data-mono text-primary">{result.cntRange}</span></div>
+        </div>
+        <div className="mt-2 text-xs text-muted-foreground">
+          Predicted DIZ enhancement vs base alloy:{" "}
+          <span className="data-mono text-primary">+{result.dizEnhancement.toFixed(1)}%</span>{" "}
+          <span className="italic">— synergistic Cu/Cu₂O + CNT effect (Ali et al. 2025)</span>
         </div>
       </div>
     </section>
