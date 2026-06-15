@@ -220,6 +220,40 @@ function QCPredictor() {
   const [source, setSource] = useState<Source>("Literature");
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [showPresets, setShowPresets] = useState(true);
+  const [naoh, setNaoh] = useState(10);
+  const [slots, setSlots] = useState<(Slot | null)[]>([null, null, null]);
+
+  const props = useMemo(() => computeProperties(comp, computeDescriptors(comp).e_a, pred.kind === "QC"), [comp, pred]);
+  const stability = useMemo(() => computeStability(comp, computeDescriptors(comp).e_a), [comp]);
+  const leach = useMemo(() => simulateLeaching(comp, pred.kind === "QC", naoh), [comp, pred, naoh]);
+
+  const currentSlot: Slot = useMemo(
+    () => ({
+      comp: { ...comp },
+      e_a: desc.e_a,
+      phase: pred.label,
+      confidence: pred.confidence,
+      hardness: props.hardness,
+      density: props.density,
+      antibacterial: props.antibacterial,
+      stabilityScore: stability.passed,
+      activeSites: leach.activeSites.cnt,
+    }),
+    [comp, desc.e_a, pred, props, stability, leach]
+  );
+
+  const saveSlot = (idx: number) =>
+    setSlots((s) => {
+      const next = [...s];
+      next[idx] = currentSlot;
+      return next;
+    });
+  const clearSlot = (idx: number) =>
+    setSlots((s) => {
+      const next = [...s];
+      next[idx] = null;
+      return next;
+    });
 
   const desc = useMemo(() => computeDescriptors(comp), [comp]);
   const pred = useMemo(() => predict(comp, desc.e_a, desc.total), [comp, desc]);
