@@ -995,11 +995,12 @@ Rule-based prototype — experimental validation required.
 }
 
 // ============ SUB-COMPONENTS ============
-function DescCard({ label, value }: { label: string; value: string }) {
+function DescCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="rounded-lg border border-border bg-secondary/40 px-3 py-2">
       <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
       <div className="data-mono text-base font-semibold text-primary">{value}</div>
+      {hint && <div className="text-[9px] text-muted-foreground/80 mt-0.5">{hint}</div>}
     </div>
   );
 }
