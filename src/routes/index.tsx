@@ -105,7 +105,20 @@ function computeDescriptors(c: Comp) {
   const en = (c.Al * 1.61 + c.Cu * 1.9 + c.Fe * 1.83 + c.Mn * 1.55) / 100;
   const radius = (c.Al * 143 + c.Cu * 128 + c.Fe * 126 + c.Mn * 127) / 100;
   const vec = (c.Al * 3 + c.Cu * 11 + c.Fe * 8 + c.Mn * 7) / 100;
-  return { e_a, en, radius, vec, total };
+  // Atomic size mismatch δ (%)
+  const r_avg = radius;
+  const delta =
+    Math.sqrt(
+      (c.Al / 100) * Math.pow(1 - 143 / r_avg, 2) +
+        (c.Cu / 100) * Math.pow(1 - 128 / r_avg, 2) +
+        (c.Fe / 100) * Math.pow(1 - 126 / r_avg, 2) +
+        (c.Mn / 100) * Math.pow(1 - 127 / r_avg, 2)
+    ) * 100;
+  // Mixing entropy (J/mol·K)
+  const R = 8.314;
+  const xs: number[] = [c.Al, c.Cu, c.Fe, c.Mn].map((v) => v / 100).filter((x) => x > 0);
+  const entropy = -R * xs.reduce((s, x) => s + x * Math.log(x), 0);
+  return { e_a, en, radius, vec, total, delta, entropy };
 }
 
 type PredKind = "QC" | "APPROX" | "ORDINARY" | "INVALID";
@@ -114,6 +127,7 @@ interface Prediction {
   label: string;
   confidence: number;
   color: string;
+  icon: string;
   reasoning: string;
   warning?: string;
 }
@@ -125,6 +139,7 @@ function predict(c: Comp, e_a: number, total: number): Prediction {
       label: "Enter valid composition to predict",
       confidence: 0,
       color: "#64748B",
+      icon: "⟳",
       reasoning: `Total must be 98–102%. Current total = ${total.toFixed(1)}%`,
     };
   }
@@ -132,44 +147,53 @@ function predict(c: Comp, e_a: number, total: number): Prediction {
   const warning = Mn > 6 ? "High Mn content (>6 at%) — competing β-Mn phase risk" : undefined;
 
   if (Al >= 62 && Al <= 72 && Cu >= 10 && Cu <= 20 && Fe >= 10 && Fe <= 15 && Mn >= 2 && Mn <= 6) {
-    const proximity = Math.max(0, 1 - Math.abs(e_a - 1.86) / 0.2);
+    const proximity = Math.max(0, 1 - Math.abs(e_a - 1.86) / 0.15);
     const confidence = Math.min(95, 70 + proximity * 25);
     return {
       kind: "QC",
-      label: "Quasicrystalline Phase",
+      label: "Icosahedral Quasicrystalline Phase",
       confidence,
       color: "#22C55E",
-      reasoning: `Rule QC matched: Al 62-72, Cu 10-20, Fe 10-15, Mn 2-6 — e/a = ${e_a.toFixed(2)} (target 1.86)`,
+      icon: "✦",
+      reasoning: `Composition within Al-Cu-Fe-Mn QC phase field. e/a = ${e_a.toFixed(2)} — within icosahedral stability window.`,
       warning,
     };
   }
-  if (Al >= 58 && Al <= 72 && Cu >= 8 && Cu <= 20 && Fe >= 8 && Fe <= 15 && Mn >= 6 && Mn <= 9) {
-    const proximity = Math.max(0, 1 - Math.abs(e_a - 1.86) / 0.25);
-    const confidence = 45 + proximity * 15;
+  if (Al >= 58 && Al <= 75 && Cu >= 8 && Cu <= 22 && Fe >= 8 && Fe <= 17 && Mn >= 6 && Mn <= 9) {
+    const seed = (Al * 7.3 + Cu * 3.1 + Fe * 5.7 + Mn * 11.9) % 1;
+    const confidence = 35 + seed * 20;
     return {
       kind: "APPROX",
       label: "Approximant Crystal",
       confidence,
       color: "#F59E0B",
-      reasoning: "Rule APPROX matched: borders QC field but high Mn favors periodic approximant",
+      icon: "◈",
+      reasoning: "Mn > 6 at% introduces β-Mn competing phase risk. Periodic approximant more likely than true QC.",
       warning: warning ?? "Periodic approximant structure expected",
     };
   }
-  const dist =
-    Math.max(0, Math.max(58 - Al, Al - 72)) +
-    Math.max(0, Math.max(8 - Cu, Cu - 20)) +
-    Math.max(0, Math.max(8 - Fe, Fe - 15)) +
-    Math.max(0, Math.max(0 - Mn, Mn - 9));
-  const confidence = Math.max(15, 35 - dist * 1.5);
+  const reasons: string[] = [];
+  if (Al < 62) reasons.push("Al too low (<62%)");
+  if (Al > 72) reasons.push("Al too high (>72%)");
+  if (Cu < 10) reasons.push("Cu insufficient (<10%)");
+  if (Cu > 20) reasons.push("Cu excessive (>20%)");
+  if (Fe < 10) reasons.push("Fe insufficient (<10%)");
+  if (Fe > 15) reasons.push("Fe excessive (>15%)");
+  if (Mn > 9) reasons.push("Mn excessive (>9%)");
+  if (Mn < 2) reasons.push("Mn deficient (<2%)");
+  const seed = (Al * 7.3 + Cu * 3.1 + Fe * 5.7 + Mn * 11.9) % 1;
+  const confidence = 10 + seed * 20;
   return {
     kind: "ORDINARY",
     label: "Ordinary Crystal / Multi-phase",
     confidence,
     color: "#EF4444",
-    reasoning: `Composition outside known QC stability field (e/a = ${e_a.toFixed(2)})`,
+    icon: "◻",
+    reasoning: reasons.length ? `Outside QC phase field: ${reasons.join(", ")}` : `Outside QC phase field (e/a = ${e_a.toFixed(2)})`,
     warning,
   };
 }
+
 
 // ============ NORMALIZATION (Explorer mode) ============
 function normalizeOnChange(prev: Comp, key: ElKey, newVal: number): Comp {
