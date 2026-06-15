@@ -17,6 +17,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import {
+  computeProperties,
+  computeStability,
+  simulateLeaching,
+  PropertiesPanel,
+  StabilityPanel,
+  LeachingPanel,
+  ComparisonPanel,
+  ExportPanel,
+  type Slot,
+} from "@/components/qc-modules";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -209,9 +220,43 @@ function QCPredictor() {
   const [source, setSource] = useState<Source>("Literature");
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [showPresets, setShowPresets] = useState(true);
+  const [naoh, setNaoh] = useState(10);
+  const [slots, setSlots] = useState<(Slot | null)[]>([null, null, null]);
 
   const desc = useMemo(() => computeDescriptors(comp), [comp]);
   const pred = useMemo(() => predict(comp, desc.e_a, desc.total), [comp, desc]);
+
+  const props = useMemo(() => computeProperties(comp, desc.e_a, pred.kind === "QC"), [comp, desc.e_a, pred.kind]);
+  const stability = useMemo(() => computeStability(comp, desc.e_a), [comp, desc.e_a]);
+  const leach = useMemo(() => simulateLeaching(comp, pred.kind === "QC", naoh), [comp, pred.kind, naoh]);
+
+  const currentSlot: Slot = useMemo(
+    () => ({
+      comp: { ...comp },
+      e_a: desc.e_a,
+      phase: pred.label,
+      confidence: pred.confidence,
+      hardness: props.hardness,
+      density: props.density,
+      antibacterial: props.antibacterial,
+      stabilityScore: stability.passed,
+      activeSites: leach.activeSites.cnt,
+    }),
+    [comp, desc.e_a, pred, props, stability, leach]
+  );
+
+  const saveSlot = (idx: number) =>
+    setSlots((s) => {
+      const next = [...s];
+      next[idx] = currentSlot;
+      return next;
+    });
+  const clearSlot = (idx: number) =>
+    setSlots((s) => {
+      const next = [...s];
+      next[idx] = null;
+      return next;
+    });
 
   // record to history (debounced)
   useEffect(() => {
@@ -306,6 +351,92 @@ function QCPredictor() {
         ? { color: "#F59E0B", text: `⚠ ${desc.total.toFixed(1)}% — normalize?`, bg: "rgba(245,158,11,0.1)" }
         : { color: "#EF4444", text: `✗ ${desc.total.toFixed(1)}% — invalid`, bg: "rgba(239,68,68,0.1)" };
 
+  const bibtex = `@software{QCPhasePredictor2026,
+  title = {QC Phase Predictor: ML-Inspired Composition Tool for Al-Cu-Fe-Mn Quasicrystals},
+  author = {PIEAS MME FYP and Ali, Fahad},
+  year = {2026},
+  institution = {PIEAS, Department of MME},
+  url = {${typeof window !== "undefined" ? window.location.origin : ""}}
+}`;
+
+  const pythonDict = (() => {
+    const arr = history.map((r) => ({
+      Al: +r.comp.Al.toFixed(2),
+      Cu: +r.comp.Cu.toFixed(2),
+      Fe: +r.comp.Fe.toFixed(2),
+      Mn: +r.comp.Mn.toFixed(2),
+      e_a: +r.e_a.toFixed(3),
+      phase: r.pred.kind,
+      confidence: +r.pred.confidence.toFixed(1),
+      source: r.source,
+    }));
+    return `# QC Phase Predictor — session export\ncompositions = ${JSON.stringify(arr, null, 2)}\n\nimport pandas as pd\ndf = pd.DataFrame(compositions)\nprint(df.head())`;
+  })();
+
+  const buildReportHTML = () => {
+    const ts = new Date().toLocaleString();
+    const ruleRows = stability.rules
+      .map(
+        (r) =>
+          `<tr><td>${r.label}</td><td style="color:${r.status === "pass" ? "#16a34a" : r.status === "warn" ? "#d97706" : "#dc2626"}">${r.status.toUpperCase()}</td><td>${r.detail}</td></tr>`
+      )
+      .join("");
+    return `<!doctype html><html><head><meta charset="utf-8"><title>QC Phase Predictor Report</title>
+<style>
+body{font-family:-apple-system,Inter,Arial,sans-serif;color:#0f172a;padding:32px;max-width:780px;margin:auto;}
+h1{color:#0369a1;margin:0 0 4px;font-size:22px;}
+h2{color:#0369a1;font-size:14px;margin:20px 0 6px;border-bottom:1px solid #e2e8f0;padding-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px;}
+td,th{border:1px solid #e2e8f0;padding:6px 8px;text-align:left;}
+th{background:#f1f5f9;}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;}
+.footer{margin-top:24px;font-size:10px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:8px;}
+</style></head><body>
+<h1>QC Phase Predictor — Composition Report</h1>
+<div style="font-size:11px;color:#64748b;">Generated ${ts} · PIEAS MME FYP 2025-26</div>
+
+<h2>Composition (at%)</h2>
+<table><tr><th>Al</th><th>Cu</th><th>Fe</th><th>Mn</th><th>Total</th></tr>
+<tr class="mono"><td>${comp.Al.toFixed(2)}</td><td>${comp.Cu.toFixed(2)}</td><td>${comp.Fe.toFixed(2)}</td><td>${comp.Mn.toFixed(2)}</td><td>${desc.total.toFixed(2)}</td></tr></table>
+
+<h2>Predicted Phase</h2>
+<p><span class="badge" style="background:${pred.color}22;color:${pred.color};border:1px solid ${pred.color}55;">${pred.label}</span>
+&nbsp;Confidence: <span class="mono">${pred.confidence.toFixed(1)}%</span></p>
+<p style="font-size:12px;color:#475569;">${pred.reasoning}</p>
+
+<h2>Estimated Properties</h2>
+<table class="mono">
+<tr><td>Hardness (HV)</td><td>${props.hardness.toFixed(0)}</td></tr>
+<tr><td>Density (g/cm³)</td><td>${props.density.toFixed(2)}</td></tr>
+<tr><td>Melting Point (°C)</td><td>${props.meltingPoint.toFixed(0)}</td></tr>
+<tr><td>Thermal Conductivity (W/mK)</td><td>${props.thermalConductivity.toFixed(0)}</td></tr>
+<tr><td>e/a ratio</td><td>${desc.e_a.toFixed(3)}</td></tr>
+<tr><td>VEC</td><td>${desc.vec.toFixed(3)}</td></tr>
+<tr><td>Avg. EN</td><td>${desc.en.toFixed(3)}</td></tr>
+<tr><td>Avg. radius (pm)</td><td>${desc.radius.toFixed(1)}</td></tr>
+<tr><td>Wear Index /10</td><td>${props.wearIndex.toFixed(1)}</td></tr>
+<tr><td>Antibacterial Index /10</td><td>${props.antibacterial.toFixed(1)}</td></tr>
+<tr><td>Electrical Resistivity</td><td>${props.resistivityTendency}</td></tr>
+</table>
+
+<h2>Phase Stability Rules (${stability.passed}/4 passed)</h2>
+<table><tr><th>Rule</th><th>Status</th><th>Detail</th></tr>${ruleRows}</table>
+
+<h2>Leaching Simulation (${naoh}M NaOH)</h2>
+<table class="mono"><tr><th></th><th>Al</th><th>Cu</th><th>Fe</th><th>Mn</th></tr>
+<tr><td>Before</td><td>${leach.before.Al.toFixed(1)}</td><td>${leach.before.Cu.toFixed(1)}</td><td>${leach.before.Fe.toFixed(1)}</td><td>${leach.before.Mn.toFixed(1)}</td></tr>
+<tr><td>After (surface)</td><td>${leach.after.Al.toFixed(1)}</td><td>${leach.after.Cu.toFixed(1)}</td><td>${leach.after.Fe.toFixed(1)}</td><td>${leach.after.Mn.toFixed(1)}</td></tr></table>
+<p style="font-size:12px;"><b>${leach.activeSites.label}</b><br/>Expected CNT diameter: ${leach.cntRange}</p>
+
+<div class="footer">
+Generated by QC Phase Predictor, PIEAS MME FYP 2025-26<br/>
+Tool developed as part of FYP: ML-Assisted Prediction of QC Phase Formation in Al-Cu-Fe-Mn System.
+Rule-based prototype — experimental validation required.
+</div>
+</body></html>`;
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* HEADER */}
@@ -335,25 +466,37 @@ function QCPredictor() {
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="border-border bg-secondary hover:bg-secondary/80">
-                  About
+                  ℹ️ About
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-card border-border">
+              <DialogContent className="bg-card border-border max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>About QC Phase Predictor</DialogTitle>
-                  <DialogDescription className="text-muted-foreground pt-2 space-y-2">
+                  <DialogTitle>QC Phase Predictor v1.0</DialogTitle>
+                  <DialogDescription className="text-muted-foreground pt-2 space-y-3 text-sm">
                     <span className="block">
-                      A rule-based prototype for predicting quasicrystalline phase formation in the
-                      Al-Cu-Fe-Mn quaternary system, developed at PIEAS.
+                      Developed at PIEAS, Department of Materials and Metallurgy Engineering as
+                      part of a Final Year Project supervised by Dr. Fahad Ali.
                     </span>
                     <span className="block">
-                      Heuristics derived from the Hume-Rothery electron concentration rule and known
-                      Tsai-type icosahedral phase fields. Real ML integration (HYPOD-X) is planned.
+                      This tool implements rule-based heuristics as a prototype for a Random Forest
+                      ML model being trained on the HYPOD-X quasicrystal database (2024).
+                    </span>
+                    <span className="block">
+                      <strong className="text-foreground">Based on:</strong>
+                      <ul className="ml-4 mt-1 list-disc space-y-0.5">
+                        <li>Ali et al. (2025) — AlCuFeMn QC + CNT CVD</li>
+                        <li>HYPOD-X Database (2024)</li>
+                        <li>Tsai et al. — Al-Cu-Fe QC phase studies</li>
+                      </ul>
+                    </span>
+                    <span className="block italic">
+                      For research guidance only. Experimental validation required.
                     </span>
                   </DialogDescription>
                 </DialogHeader>
               </DialogContent>
             </Dialog>
+
           </div>
         </div>
       </header>
@@ -698,6 +841,10 @@ function QCPredictor() {
             </div>
           </section>
 
+          <PropertiesPanel props={props} />
+          <StabilityPanel data={stability} />
+          <LeachingPanel comp={comp} isQC={pred.kind === "QC"} naoh={naoh} setNaoh={setNaoh} />
+
           {/* PANEL 4 — HISTORY */}
           <section className="lg:col-span-12 rounded-xl border border-border bg-card p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
@@ -799,7 +946,17 @@ function QCPredictor() {
               </div>
             )}
           </section>
+
+          <ComparisonPanel
+            slots={slots}
+            saveSlot={saveSlot}
+            clearSlot={clearSlot}
+            currentSlot={currentSlot}
+          />
+
+          <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
         </div>
+
 
         <footer className="mt-8 border-t border-border pt-4 text-center text-xs text-muted-foreground">
           Rule-based prototype for a Random Forest ML model being trained on the HYPOD-X
