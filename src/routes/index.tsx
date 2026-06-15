@@ -946,7 +946,17 @@ Rule-based prototype — experimental validation required.
               </div>
             )}
           </section>
+
+          <ComparisonPanel
+            slots={slots}
+            saveSlot={saveSlot}
+            clearSlot={clearSlot}
+            currentSlot={currentSlot}
+          />
+
+          <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
         </div>
+
 
         <footer className="mt-8 border-t border-border pt-4 text-center text-xs text-muted-foreground">
           Rule-based prototype for a Random Forest ML model being trained on the HYPOD-X
