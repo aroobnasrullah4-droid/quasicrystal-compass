@@ -85,33 +85,53 @@ export interface LeachResult {
   activeSites: { label: string; cnt: string; color: string };
   cntRange: string;
   naohNote: string;
+  dizEnhancement: number;
 }
 
+const NAOH_TABLE: Record<number, { aD: number; cuE: number; feE: number; mnE: number; warn?: string }> = {
+  5: { aD: 0.45, cuE: 1.3, feE: 1.1, mnE: 1.2 },
+  8: { aD: 0.65, cuE: 1.7, feE: 1.2, mnE: 1.4 },
+  10: { aD: 0.85, cuE: 2.1, feE: 1.4, mnE: 1.6 },
+  12: { aD: 0.9, cuE: 2.3, feE: 1.5, mnE: 1.7 },
+  15: { aD: 0.93, cuE: 2.2, feE: 1.4, mnE: 1.6, warn: "Excess NaOH may damage QC structure" },
+};
+
 export function simulateLeaching(c: Comp, isQC: boolean, naoh: number): LeachResult {
-  const conc = naoh / 10; // scale factor vs 10M baseline
-  const Al_r = c.Al * Math.max(0.05, 0.15 / conc);
-  const Cu_r = c.Cu * (2.1 * Math.min(1.2, conc));
-  const Fe_r = c.Fe * (1.4 * Math.min(1.15, conc));
-  const Mn_r = c.Mn * (1.6 * Math.min(1.15, conc));
-  const total = Al_r + Cu_r + Fe_r + Mn_r || 1;
+  const f = NAOH_TABLE[naoh] ?? NAOH_TABLE[10];
+  const Al_s = c.Al * (1 - f.aD);
+  const Cu_s = c.Cu * f.cuE;
+  const Fe_s = c.Fe * f.feE;
+  const Mn_s = c.Mn * f.mnE;
+  const tot = Al_s + Cu_s + Fe_s + Mn_s || 1;
   const after: Comp = {
-    Al: (Al_r / total) * 100,
-    Cu: (Cu_r / total) * 100,
-    Fe: (Fe_r / total) * 100,
-    Mn: (Mn_r / total) * 100,
+    Al: (Al_s / tot) * 100,
+    Cu: (Cu_s / tot) * 100,
+    Fe: (Fe_s / tot) * 100,
+    Mn: (Mn_s / tot) * 100,
   };
   let activeSites;
-  if (after.Cu > 25) {
-    activeSites = { label: "Cu/Cu₂O dodecahedral active sites: LIKELY ✓", cnt: "HIGH", color: "#22C55E" };
-  } else if (after.Cu > 15) {
-    activeSites = { label: "Cu/Cu₂O active sites: MODERATE ⚠", cnt: "MODERATE", color: "#F59E0B" };
+  if (after.Cu > 30) {
+    activeSites = { label: "✅ Cu/Cu₂O dodecahedral active sites: HIGHLY LIKELY — excellent CNT nucleation", cnt: "HIGH", color: "#22C55E" };
+  } else if (after.Cu > 20) {
+    activeSites = { label: "⚠️ Cu/Cu₂O active sites: MODERATE — acceptable CNT nucleation", cnt: "MODERATE", color: "#F59E0B" };
   } else {
-    activeSites = { label: "Insufficient Cu for active site formation ✗", cnt: "LOW", color: "#EF4444" };
+    activeSites = { label: "❌ Cu insufficient for active site formation", cnt: "LOW", color: "#EF4444" };
   }
-  const cntRange = isQC ? "29–118 nm (per Ali et al. 2025)" : "17–45 nm (un-leached reference)";
-  const naohNote = naoh === 10 ? "Optimal — matches published conditions" : `Adjusted dissolution vs 10M baseline (×${conc.toFixed(2)})`;
-  return { before: c, after, cuSurface: after.Cu, activeSites, cntRange, naohNote };
+  const cntRange =
+    isQC && after.Cu > 20
+      ? "29–118 nm (Ali et al. 2025 — supervisor's data)"
+      : isQC
+        ? "17–45 nm (un-leached QC reference)"
+        : "Phase mismatch — CNT growth unlikely";
+  const naohNote =
+    naoh === 10
+      ? "★ Optimal — matches published conditions"
+      : f.warn ?? `Adjusted dissolution per ${naoh}M factors`;
+  const dizEnhancement =
+    after.Cu * 0.4 + after.Mn * 0.2 + (activeSites.cnt === "HIGH" ? 3 : 1);
+  return { before: c, after, cuSurface: after.Cu, activeSites, cntRange, naohNote, dizEnhancement };
 }
+
 
 // ============ SHARED UI ============
 function Bar({ value, max, color, height = 8 }: { value: number; max: number; color: string; height?: number }) {
