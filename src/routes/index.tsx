@@ -588,6 +588,17 @@ Rule-based prototype — experimental validation required.
               {(Object.keys(ELEMENTS) as ElKey[]).map((k) => {
                 const [min, max] = RANGES[k];
                 const el = ELEMENTS[k];
+                const QC_OPT: Record<ElKey, [number, number]> = {
+                  Al: [62, 72],
+                  Cu: [10, 20],
+                  Fe: [10, 15],
+                  Mn: [2, 6],
+                };
+                const [lo, hi] = QC_OPT[k];
+                const v = comp[k];
+                const dist = v < lo ? lo - v : v > hi ? v - hi : 0;
+                const borderColor = dist === 0 ? "#22C55E" : dist <= 2 ? "#F59E0B" : "#EF4444";
+                const hint = `Typical QC range: ${lo}–${hi} at%`;
                 return (
                   <div key={k}>
                     <div className="mb-1 flex items-center justify-between">
@@ -595,8 +606,8 @@ Rule-based prototype — experimental validation required.
                         <span style={{ color: el.color }}>{k}</span>{" "}
                         <span className="text-muted-foreground">— {el.name}</span>
                       </label>
-                      <span className="data-mono text-[10px] text-muted-foreground">
-                        hint {min}-{max}
+                      <span className="data-mono text-[10px]" style={{ color: borderColor }}>
+                        {dist === 0 ? "✓ optimal" : dist <= 2 ? "⚠ near" : "✗ outside"}
                       </span>
                     </div>
                     {mode === "literature" ? (
@@ -605,7 +616,8 @@ Rule-based prototype — experimental validation required.
                         step={0.1}
                         value={Number(comp[k].toFixed(2))}
                         onChange={(e) => handleNumber(k, parseFloat(e.target.value))}
-                        className="w-full rounded-md border border-border bg-secondary/40 px-3 py-1.5 data-mono text-sm text-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="w-full rounded-md border bg-secondary/40 px-3 py-1.5 data-mono text-sm text-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
+                        style={{ borderColor: borderColor + "88" }}
                       />
                     ) : (
                       <>
@@ -617,18 +629,21 @@ Rule-based prototype — experimental validation required.
                           value={comp[k]}
                           onChange={(e) => handleSlider(k, parseFloat(e.target.value))}
                           className="w-full accent-primary"
+                          style={{ accentColor: borderColor }}
                         />
                         <div className="flex justify-between data-mono text-[10px] text-muted-foreground">
                           <span>{min}</span>
-                          <span className="text-primary">{comp[k].toFixed(1)} at%</span>
+                          <span style={{ color: borderColor }}>{comp[k].toFixed(1)} at%</span>
                           <span>{max}</span>
                         </div>
                       </>
                     )}
+                    <div className="data-mono text-[9px] text-muted-foreground/80 mt-0.5">{hint}</div>
                   </div>
                 );
               })}
             </div>
+
 
             {/* Total badge */}
             <div
