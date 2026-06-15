@@ -873,8 +873,6 @@ Rule-based prototype — experimental validation required.
               />
             )}
 
-            <div style={{ display: "none" }}>
-
             {/* Hume-Rothery gauge */}
             <div className="mt-5 rounded-lg border border-border bg-secondary/30 p-4">
               <div className="mb-2 flex items-center justify-between">
