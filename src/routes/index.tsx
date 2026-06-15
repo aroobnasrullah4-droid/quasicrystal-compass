@@ -244,8 +244,12 @@ function QCPredictor() {
   const [source, setSource] = useState<Source>("Literature");
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [showPresets, setShowPresets] = useState(true);
+  const [showHistory, setShowHistory] = useState(true);
+  const [historyFilter, setHistoryFilter] = useState<"ALL" | "QC" | "APPROX" | "ORDINARY">("ALL");
   const [naoh, setNaoh] = useState(10);
   const [slots, setSlots] = useState<(Slot | null)[]>([null, null, null]);
+  const [loadedFrom, setLoadedFrom] = useState<string | null>("Tsai Classic");
+  const [pulseKey, setPulseKey] = useState(0);
 
   const desc = useMemo(() => computeDescriptors(comp), [comp]);
   const pred = useMemo(() => predict(comp, desc.e_a, desc.total), [comp, desc]);
