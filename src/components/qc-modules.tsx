@@ -15,18 +15,22 @@ export interface Properties {
 }
 
 export function computeProperties(c: Comp, e_a: number, isQC: boolean): Properties {
-  const hardness = 0.8 * (c.Cu * 12 + c.Fe * 15 + c.Mn * 8 + c.Al * 3);
+  const hardness = c.Al * 3 + c.Cu * 12 + c.Fe * 15 + c.Mn * 8;
   const density = (c.Al * 2.7 + c.Cu * 8.96 + c.Fe * 7.87 + c.Mn * 7.43) / 100;
   const meltingPoint = (c.Al * 660 + c.Cu * 1085 + c.Fe * 1538 + c.Mn * 1246) / 100;
   const thermalConductivity = (c.Al * 237 + c.Cu * 401 + c.Fe * 80 + c.Mn * 7.8) / 100;
   const resistivityTendency =
     e_a >= 1.8 && e_a <= 1.95
-      ? "High resistivity expected (QC anomalous transport)"
+      ? "High resistivity expected ✦ (QC anomalous transport)"
       : "Normal metallic resistivity expected";
-  const wearIndex = Math.min(10, ((hardness / 900) * 0.6 + (1 - thermalConductivity / 237) * 0.4) * 10);
-  const antibacterial = Math.min(10, c.Cu * 0.5 + c.Mn * 0.3 + (isQC ? 2 : 0));
+  const wearIndex = Math.min(10, (hardness / 900) * 6 + (1 - density / 8) * 4);
+  const antibacterial = Math.min(
+    10,
+    c.Cu * 0.35 + c.Mn * 0.25 + (isQC ? 3.0 : 0) + (c.Cu > 15 ? 1.5 : 0)
+  );
   return { hardness, density, meltingPoint, thermalConductivity, resistivityTendency, wearIndex, antibacterial };
 }
+
 
 // ============ STABILITY RULES ============
 export interface StabilityRule {
