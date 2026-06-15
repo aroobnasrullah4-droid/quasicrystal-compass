@@ -103,8 +103,10 @@ function predict(c: Comp, e_a: number): Prediction {
       warning,
     };
   }
+  // Deterministic pseudo-confidence from composition (avoid hydration mismatch)
+  const seed = (Al * 7.3 + Cu * 3.1 + Fe * 5.7 + Mn * 11.9) % 1;
   if (Al >= 58 && Cu >= 8 && Fe >= 8 && Mn > 6) {
-    const confidence = 45 + Math.random() * 20;
+    const confidence = 45 + seed * 20;
     return {
       kind: "APPROX",
       label: "Approximant Crystal",
@@ -114,7 +116,7 @@ function predict(c: Comp, e_a: number): Prediction {
       warning: warning ?? "Periodic approximant structure expected",
     };
   }
-  const confidence = 20 + Math.random() * 20;
+  const confidence = 20 + seed * 20;
   return {
     kind: "ORDINARY",
     label: "Ordinary Crystal / Multi-phase",
