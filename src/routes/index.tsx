@@ -466,25 +466,37 @@ Rule-based prototype — experimental validation required.
             <Dialog>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="border-border bg-secondary hover:bg-secondary/80">
-                  About
+                  ℹ️ About
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-card border-border">
+              <DialogContent className="bg-card border-border max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>About QC Phase Predictor</DialogTitle>
-                  <DialogDescription className="text-muted-foreground pt-2 space-y-2">
+                  <DialogTitle>QC Phase Predictor v1.0</DialogTitle>
+                  <DialogDescription className="text-muted-foreground pt-2 space-y-3 text-sm">
                     <span className="block">
-                      A rule-based prototype for predicting quasicrystalline phase formation in the
-                      Al-Cu-Fe-Mn quaternary system, developed at PIEAS.
+                      Developed at PIEAS, Department of Materials and Metallurgy Engineering as
+                      part of a Final Year Project supervised by Dr. Fahad Ali.
                     </span>
                     <span className="block">
-                      Heuristics derived from the Hume-Rothery electron concentration rule and known
-                      Tsai-type icosahedral phase fields. Real ML integration (HYPOD-X) is planned.
+                      This tool implements rule-based heuristics as a prototype for a Random Forest
+                      ML model being trained on the HYPOD-X quasicrystal database (2024).
+                    </span>
+                    <span className="block">
+                      <strong className="text-foreground">Based on:</strong>
+                      <ul className="ml-4 mt-1 list-disc space-y-0.5">
+                        <li>Ali et al. (2025) — AlCuFeMn QC + CNT CVD</li>
+                        <li>HYPOD-X Database (2024)</li>
+                        <li>Tsai et al. — Al-Cu-Fe QC phase studies</li>
+                      </ul>
+                    </span>
+                    <span className="block italic">
+                      For research guidance only. Experimental validation required.
                     </span>
                   </DialogDescription>
                 </DialogHeader>
               </DialogContent>
             </Dialog>
+
           </div>
         </div>
       </header>
