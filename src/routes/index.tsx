@@ -545,7 +545,6 @@ For research guidance only — experimental validation required.
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <SplashScreen />
       {/* HEADER */}
       <header className="penrose-bg border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -560,28 +559,17 @@ For research guidance only — experimental validation required.
                 <div>
                   <h1 className="text-2xl font-bold tracking-tight">QC Phase Predictor</h1>
                   <p className="text-sm text-muted-foreground">
-                    ML-Inspired Quasicrystal Composition Tool — Al-Cu-Fe-Mn System
+                    Computational Tool for Quasicrystalline Phase Prediction in Al-Cu-Fe-Mn Systems
                   </p>
                 </div>
-              </div>
-              <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/5 px-3 py-1 text-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                <span className="data-mono text-primary">PIEAS FYP Research Tool</span>
-                <span className="text-muted-foreground">| MME Department</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <span
                 className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-[10px] font-mono text-sky-300"
-                title="v1.0: Rule-based | v2.0: + XRD + Tracker + AI | v3.0 (planned): Real ML model"
+                title="Research preview build"
               >
-                v2.0 — Final
-              </span>
-              <span
-                className="hidden md:inline-block rounded-full border border-border bg-secondary/40 px-2 py-1 text-[10px] text-muted-foreground"
-                title="Keyboard shortcuts:&#10;Ctrl+L: Load next preset&#10;Ctrl+N: Auto-normalize&#10;Ctrl+E: Export CSV&#10;Ctrl+Shift+A: Ask AI"
-              >
-                ⌨ Shortcuts
+                v2.0 | Research Preview
               </span>
             <Dialog>
               <DialogTrigger asChild>
@@ -591,26 +579,37 @@ For research guidance only — experimental validation required.
               </DialogTrigger>
               <DialogContent className="bg-card border-border max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>QC Phase Predictor v1.0</DialogTitle>
+                  <DialogTitle>QC Phase Predictor v2.0</DialogTitle>
                   <DialogDescription className="text-muted-foreground pt-2 space-y-3 text-sm">
                     <span className="block">
-                      Developed at PIEAS, Department of Materials and Metallurgy Engineering as
-                      part of a Final Year Project supervised by Dr. Fahad Ali.
+                      A computational research tool for predicting quasicrystalline phase
+                      formation in Al-Cu-Fe-Mn quaternary alloy systems.
                     </span>
                     <span className="block">
-                      This tool implements rule-based heuristics as a prototype for a Random Forest
-                      ML model being trained on the HYPOD-X quasicrystal database (2024).
-                    </span>
-                    <span className="block">
-                      <strong className="text-foreground">Based on:</strong>
+                      <strong className="text-foreground">Scientific Basis:</strong>
                       <ul className="ml-4 mt-1 list-disc space-y-0.5">
-                        <li>Ali et al. (2025) — AlCuFeMn QC + CNT CVD</li>
-                        <li>HYPOD-X Database (2024)</li>
-                        <li>Tsai et al. — Al-Cu-Fe QC phase studies</li>
+                        <li>Hume-Rothery electron concentration rules</li>
+                        <li>Tsai's five QC formation criteria</li>
+                        <li>HYPOD-X compositional database (Fujita et al., 2024)</li>
+                        <li>Ali et al. (2025) — AlCuFeMn QC + CNT catalytic growth and antibacterial activity</li>
+                        <li>Liu et al. (2021) — ML prediction of QC phases from composition</li>
+                        <li>Uryu et al. (2023) — Three new QCs predicted and confirmed by ML</li>
+                      </ul>
+                    </span>
+                    <span className="block">
+                      <strong className="text-foreground">Development Roadmap:</strong>
+                      <ul className="ml-4 mt-1 list-disc space-y-0.5">
+                        <li>v1.0 — Rule-based heuristic engine</li>
+                        <li>v2.0 — Extended modules: XRD simulation, leaching, CNT growth, AI analysis</li>
+                        <li>v3.0 — Random Forest model (HYPOD-X trained)</li>
+                        <li>v4.0 — Experimental validation integrated</li>
                       </ul>
                     </span>
                     <span className="block italic">
-                      For research guidance only. Experimental validation required.
+                      Disclaimer: This tool provides computational estimates for research
+                      guidance. All predictions require experimental validation. Property
+                      estimates use linear mixing rules and do not account for quasiperiodic
+                      structural anomalies.
                     </span>
                   </DialogDescription>
                 </DialogHeader>
@@ -621,6 +620,8 @@ For research guidance only — experimental validation required.
           </div>
         </div>
       </header>
+
+
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
