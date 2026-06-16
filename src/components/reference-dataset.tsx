@@ -261,7 +261,12 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
           <li>• <span className="text-foreground">Al-Cu-Fe-Si (replacing Al):</span> ≤2 at% Si raises i-QC fraction + hardness, cuts porosity; &gt;5 at% → approximant.</li>
           <li>• <span className="text-foreground">B + Si synergy:</span> small B suppresses θ-Al₂Cu and refines grains; Si+B together = peak hardness + toughness.</li>
           <li>• <span className="text-foreground">Cooling rate &gt;10⁴ °C/s:</span> favors i-QC, suppresses β. Microhardness: i-QC (ψ) &gt; λ-Al₁₃Fe₄ &gt; β ≈ τ ≈ η &gt; θ-Al₂Cu.</li>
-          <li>• <span className="text-foreground">NaOH dealloying:</span> i-QC core preserved; surface → Cu/Fe + oxide nanoparticles (catalytic).</li>
+          <li>• <span className="text-foreground">Mechanical alloying (Tcherdyntsev 2002):</span> MA alone → β/B2 + unreacted elements, NOT QC. Path: elements → bcc Al(Cu,Fe)+Al₂Cu → Al₇Cu₂Fe+D8.3(Al₄Cu₉) → i-QC. QC only appears after anneal &gt;500 °C; single-phase needs ~700–800 °C. Over-milling → β dominates.</li>
+          <li>• <span className="text-foreground">Ag (~1 at%, subs Cu):</span> antibacterial synergy with Cu/Cu₂O, stays icosahedral.</li>
+          <li>• <span className="text-foreground">Zn 0.5–4 at% (subs Cu):</span> tunes e/a, boosts DIZ; QC+β retained. Best Gram−ve kill at Zn=4 (DIZ≈26 mm); best Gram+ve at Zn=0.5.</li>
+          <li>• <span className="text-foreground">NaOH dealloying of i-Al-Cu-Fe(-Ag-Zn):</span> QC core preserved; surface → Cu, Fe, Cu₂O, CuFe₂O₄, β. Cu oxides = antibacterial active sites.</li>
+          <li>• <span className="text-foreground">Porosity penalty:</span> powder-metallurgy i-QC HV ≈ 2.2 GPa due to porosity; cast/HIP reaches ~7.85 GPa.</li>
+          <li>• <span className="text-foreground">Single-phase Al-Cu-Fe window:</span> between Al₅₈Cu₂₈Fe₁₄ and Al₇₀Cu₂₀Fe₁₀ (ω-phase boundary above Al₇₀). Use to validate any pure Al-Cu-Fe prediction.</li>
         </ul>
       </div>
 
