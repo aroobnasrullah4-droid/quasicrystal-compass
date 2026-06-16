@@ -542,7 +542,7 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
                       style={{ width: `${Math.min(100, (r.diz / 20) * 100)}%` }}
                     />
                   </div>
-                  <span className="text-sky-300">Your prediction: {r.diz.toFixed(1)} mm</span>
+                  <span className="text-sky-300">Current prediction: {r.diz.toFixed(1)} mm</span>
                 </div>
               </div>
               <div className="mt-2 flex flex-wrap gap-1 text-[10px]">
