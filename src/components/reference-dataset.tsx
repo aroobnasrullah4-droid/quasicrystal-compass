@@ -63,9 +63,6 @@ function reportedKind(phase: string): "QC" | "APPROX" | "ORDINARY" {
   if (p.includes("am") || p.includes("approx")) return "APPROX";
   return "ORDINARY";
 }
-  if (p.includes("am") || p.includes("approx")) return "APPROX";
-  return "ORDINARY";
-}
 
 // Project to Al-Cu-Fe-Mn and renormalize to 100%
 function projectAlCuFeMn(r: RawRow): { comp: Comp; otherPct: number } {
