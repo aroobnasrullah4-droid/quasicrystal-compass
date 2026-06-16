@@ -117,7 +117,6 @@ export function CoSubstitutionPanel() {
       >
         {PHASE_DATA.map((step, i) => {
           const c = statusColor(step.status);
-          const isCurrent = current.x === step.x;
           return (
             <div
               key={step.x}
@@ -126,32 +125,14 @@ export function CoSubstitutionPanel() {
               style={{
                 position: "relative",
                 border: `1px solid ${c}55`,
-                background: isCurrent ? `${c}18` : `${c}10`,
+                background: `${c}10`,
                 borderRadius: 10,
                 padding: "10px 10px 12px",
                 cursor: "default",
                 transition: "transform 0.15s ease",
                 transform: highlighted === i ? "translateY(-2px)" : "none",
-                boxShadow: isCurrent ? `0 0 0 2px ${c}44` : "none",
               }}
             >
-              {isCurrent && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: -6,
-                    right: 8,
-                    fontSize: 9,
-                    fontWeight: 700,
-                    padding: "1px 6px",
-                    borderRadius: 999,
-                    background: c,
-                    color: "#fff",
-                  }}
-                >
-                  CLOSEST
-                </span>
-              )}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <span style={{ fontSize: 10, fontWeight: 700, color: c, letterSpacing: "0.05em" }}>
                   x = {step.x}
