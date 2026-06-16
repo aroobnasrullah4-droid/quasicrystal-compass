@@ -17,6 +17,13 @@ interface RawRow {
   HV: number | null;
   UTS: number | null;
   source: string;
+  temp_C?: number;
+  time_h?: number;
+  anneal_temp?: number;
+  anneal_h?: number;
+  i_phase_pct?: number;
+  wear_rate?: number;
+  friction?: number;
 }
 
 // Literature dataset (Inoue 2003; Shaitura & Sukhanov 2007)
@@ -29,12 +36,30 @@ const DATA: RawRow[] = [
   { formula: "Al65Cu20Fe15",            Al: 65,   Cr: 0,    Cu: 20, Fe: 15,   Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0,   phase: "i-QC",   HV: 520, UTS: null, source: "Shaitura 2007" },
   { formula: "Al64Cu18Fe8Cr8",          Al: 64,   Cr: 8,    Cu: 18, Fe: 8,    Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0,   phase: "i-QC",   HV: 550, UTS: null, source: "Shaitura 2007" },
   { formula: "Al67Cu9Fe10.5Cr10.5Si3",  Al: 67,   Cr: 10.5, Cu: 9,  Fe: 10.5, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0,   phase: "i-QC",   HV: 700, UTS: null, source: "Shaitura 2007" },
+
+  // Paper 4 — Rosas & Perez 1998 (AlCuFe phase transitions)
+  { formula: "Al65Cu20Fe15 (700°C/72h)", Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC",    HV: null, UTS: null, source: "Rosas 1998", temp_C: 700, time_h: 72 },
+  { formula: "Al65Cu20Fe15 (900°C/8h)",  Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "β",       HV: null, UTS: null, source: "Rosas 1998", temp_C: 900, time_h: 8 },
+  { formula: "Al65Cu20Fe15 (850°C/24h)", Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "QC+β",    HV: null, UTS: null, source: "Rosas 1998", temp_C: 850, time_h: 24 },
+  { formula: "Al60Cu25Fe15 (700°C/72h)", Al: 60, Cr: 0, Cu: 25, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC",    HV: null, UTS: null, source: "Rosas 1998", temp_C: 700, time_h: 72 },
+
+  // Paper 5 — Kim et al 2002 (AlCuFeCo Co-substitution)
+  { formula: "Al65Cu20Fe15",             Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC",       HV: null, UTS: null, source: "Kim 2002" },
+  { formula: "Al65Cu20Fe12Co3",          Al: 65, Cr: 0, Cu: 20, Fe: 12, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 3, phase: "i-QC+B2",    HV: null, UTS: null, source: "Kim 2002" },
+  { formula: "Al65Cu20Fe10Co5",          Al: 65, Cr: 0, Cu: 20, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 5, phase: "i-QC+d-QC",  HV: null, UTS: null, source: "Kim 2002" },
+  { formula: "Al65Cu20Fe7Co8",           Al: 65, Cr: 0, Cu: 20, Fe: 7,  Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 8, phase: "d-QC",       HV: null, UTS: null, source: "Kim 2002" },
+
+  // Paper 6 — Lee et al 2020 (tribology, annealed at 600°C)
+  { formula: "Al57Cu33Fe10 (600°C/0h)",  Al: 57, Cr: 0, Cu: 33, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: 712, UTS: null, source: "Lee 2020", anneal_temp: 600, anneal_h: 0,  i_phase_pct: 59.24, wear_rate: 2.21e-4, friction: 0.363 },
+  { formula: "Al57Cu33Fe10 (600°C/12h)", Al: 57, Cr: 0, Cu: 33, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: 736, UTS: null, source: "Lee 2020", anneal_temp: 600, anneal_h: 12, i_phase_pct: 68.85, wear_rate: 1.16e-4, friction: 0.331 },
+  { formula: "Al57Cu33Fe10 (600°C/24h)", Al: 57, Cr: 0, Cu: 33, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: 750, UTS: null, source: "Lee 2020", anneal_temp: 600, anneal_h: 24, i_phase_pct: 75.84, wear_rate: 1.05e-4, friction: 0.304 },
+  { formula: "Al57Cu33Fe10 (600°C/36h)", Al: 57, Cr: 0, Cu: 33, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: 763, UTS: null, source: "Lee 2020", anneal_temp: 600, anneal_h: 36, i_phase_pct: 81.75, wear_rate: 0.50e-4, friction: 0.252 },
 ];
 
 // Map dataset phase to predictor categories
 function reportedKind(phase: string): "QC" | "APPROX" | "ORDINARY" {
   const p = phase.toLowerCase();
-  if (p.includes("qc") || p.includes("i-qc")) return "QC";
+  if (p.includes("qc") || p.includes("i-qc") || p.includes("d-qc")) return "QC";
   if (p.includes("am") || p.includes("approx")) return "APPROX";
   return "ORDINARY";
 }
@@ -134,6 +159,7 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
               <th className="px-2 py-2 text-right">HV</th>
               <th className="px-2 py-2 text-right">σUTS (MPa)</th>
               <th className="px-2 py-2 text-left">Source</th>
+              <th className="px-2 py-2 text-left">Conditions / Notes</th>
               <th className="px-2 py-2"></th>
             </tr>
           </thead>
@@ -166,6 +192,16 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
                 <td className="px-2 py-1.5 text-right">{r.HV ?? "—"}</td>
                 <td className="px-2 py-1.5 text-right">{r.UTS ?? "—"}</td>
                 <td className="px-2 py-1.5 font-sans text-muted-foreground">{r.source}</td>
+                <td className="px-2 py-1.5 font-sans text-[10px] text-muted-foreground">
+                  {[
+                    r.temp_C != null ? `${r.temp_C}°C` : null,
+                    r.time_h != null ? `${r.time_h}h` : null,
+                    r.anneal_temp != null ? `anneal ${r.anneal_temp}°C/${r.anneal_h ?? 0}h` : null,
+                    r.i_phase_pct != null ? `i-φ ${r.i_phase_pct}%` : null,
+                    r.wear_rate != null ? `wear ${(r.wear_rate * 1e4).toFixed(2)}e-4` : null,
+                    r.friction != null ? `μ ${r.friction}` : null,
+                  ].filter(Boolean).join(" · ") || "—"}
+                </td>
                 <td className="px-2 py-1.5 text-right">
                   <button
                     onClick={() => loadExternalComp(comp, r.formula)}
