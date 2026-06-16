@@ -330,7 +330,7 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
                 step={0.5}
                 value={p.naoh}
                 onChange={(v) => set("naoh", v)}
-                marker={{ at: 10, label: "★ Ali et al. 2025" }}
+                marker={{ at: 10, label: "(Ali et al., 2025)" }}
                 colorFn={naohColor}
               />
               <SliderRow
