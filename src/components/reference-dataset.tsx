@@ -159,6 +159,7 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
               <th className="px-2 py-2 text-right">HV</th>
               <th className="px-2 py-2 text-right">σUTS (MPa)</th>
               <th className="px-2 py-2 text-left">Source</th>
+              <th className="px-2 py-2 text-left">Conditions / Notes</th>
               <th className="px-2 py-2"></th>
             </tr>
           </thead>
