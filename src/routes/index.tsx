@@ -1199,8 +1199,7 @@ For research guidance only — experimental validation required.
             )}
           </section>
 
-          {/* Project planning + export */}
-          <FYPTracker />
+          {/* Export */}
           <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
 
           {/* Reference / literature group at bottom */}
