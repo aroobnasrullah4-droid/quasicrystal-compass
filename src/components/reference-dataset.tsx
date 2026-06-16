@@ -145,7 +145,9 @@ function reportedKind(r: RawRow): Kind {
   if (p === "d-qc" || p === "d-phase") return "DQC";
   // Coexistence / mixed → approximant bucket for scoring (predictor returns APPROX too)
   if (p.includes("d-qc") && p.includes("i-qc")) return "APPROX";
-  if (p.includes("b2") || p.includes("approx") || p.startsWith("am") || p === "β" || p.startsWith("β-")) return "APPROX";
+  // i-QC + β minor — QC remains dominant phase
+  if (p.includes("i-qc") && p.includes("β") && !p.includes("b2")) return "QC";
+  if (p.includes("b2") || p.includes("approx") || p.startsWith("am") || p === "β" || p.startsWith("β-") || p.startsWith("β/")) return "APPROX";
   if (p.includes("i-qc") || p.includes("qc")) return "QC";
   return "ORDINARY";
 }
@@ -155,7 +157,7 @@ function projectAlCuFeMn(r: RawRow): { comp: Comp; otherPct: number } {
   const sub = r.Al + r.Cu + r.Fe + r.Mn;
   const total =
     r.Al + r.Cr + r.Cu + r.Fe + r.Mn + r.V + r.Ti + r.Ce + r.Co +
-    (r.Ni ?? 0) + (r.B ?? 0) + (r.Si ?? 0);
+    (r.Ni ?? 0) + (r.B ?? 0) + (r.Si ?? 0) + (r.Ag ?? 0) + (r.Zn ?? 0);
   const otherPct = Math.max(0, total - sub);
   if (sub <= 0) return { comp: { Al: 0, Cu: 0, Fe: 0, Mn: 0 }, otherPct };
   const f = 100 / sub;
@@ -169,7 +171,7 @@ interface Props {
   loadExternalComp: (c: Comp, label: string) => void;
   predictFromExt: (
     c: Comp,
-    hints?: { co?: number; cr?: number; ni?: number; b?: number; si?: number; coolingRate?: number }
+    hints?: { co?: number; cr?: number; ni?: number; b?: number; si?: number; ag?: number; zn?: number; coolingRate?: number; millingHours?: number; annealedAboveC?: number; porous?: boolean }
   ) => {
     label: string;
     kind: string;
@@ -187,7 +189,8 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
     return DATA.map((r) => {
       const { comp, otherPct } = projectAlCuFeMn(r);
       const pred = predictFromExt(comp, {
-        co: r.Co, cr: r.Cr, ni: r.Ni, b: r.B, si: r.Si, coolingRate: r.coolingRate,
+        co: r.Co, cr: r.Cr, ni: r.Ni, b: r.B, si: r.Si, ag: r.Ag, zn: r.Zn,
+        coolingRate: r.coolingRate, millingHours: r.millingHours, annealedAboveC: r.annealedAboveC, porous: r.porous,
       });
       const expected = reportedKind(r);
       const match = pred.kind === expected;
