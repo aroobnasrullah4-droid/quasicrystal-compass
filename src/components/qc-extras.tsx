@@ -437,16 +437,16 @@ export function DopantExplorer({
       )}
 
       <div className="mt-5 rounded-lg border border-primary/40 bg-primary/5 p-4 text-sm text-foreground/90">
-        <div className="font-semibold text-primary mb-1">🎓 FYP Opportunity: Mn IS your dopant.</div>
-        In Sir Fahad's system, Mn was added to Al-Cu-Fe to create Al-Cu-Fe-Mn. The effect:
+        <div className="font-semibold text-primary mb-1">Note: Mn as a Dopant in Al-Cu-Fe-Mn</div>
+        In Ali et al. (2025), Mn was added to Al-Cu-Fe to create the Al-Cu-Fe-Mn quaternary system. Reported effects:
         <ul className="mt-2 ml-5 list-disc space-y-1 text-foreground/80">
           <li>Mn's multiple oxidation states (+2 to +7) enhance catalytic performance</li>
           <li>Mn doping boosts antibacterial activity</li>
-          <li>Mn at 2–6 at% stabilizes QC phase</li>
-          <li>Mn &gt; 6 at% risks β-Mn competing phase</li>
+          <li>Mn at 2–6 at% stabilizes the QC phase</li>
+          <li>Mn &gt; 6 at% risks β-Mn competing phase formation</li>
         </ul>
         <div className="mt-2 italic text-xs text-muted-foreground">
-          This is exactly what the Dopant Explorer simulates — YOUR composition IS a doped QC.
+          The Dopant Explorer simulates these substitutional effects on the quaternary baseline.
         </div>
       </div>
     </section>
