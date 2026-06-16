@@ -278,15 +278,15 @@ export function HeatTreatmentPanel({ comp, predKind }: Props) {
             Time: <strong style={{ color: "var(--foreground,#0f172a)" }}>{hours} h</strong>
             <input
               type="range"
-              min={0}
-              max={168}
+              min={1}
+              max={100}
               step={1}
               value={hours}
               onChange={(e) => setHours(+e.target.value)}
               style={{ width: "100%", marginTop: 4, accentColor: "#3B82F6" }}
             />
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, marginTop: 2 }}>
-              <span>0 (as-cast)</span><span>72 h</span><span>168 h</span>
+              <span>1 h</span><span style={{ color: "#22C55E" }}>72 h ★</span><span>100 h</span>
             </div>
           </label>
         </div>
