@@ -1194,6 +1194,7 @@ For research guidance only — experimental validation required.
           <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
 
           {/* Reference / literature group at bottom */}
+          <ReferenceDataset loadExternalComp={loadExternalComp} predictFromExt={predictFromExt} />
           <MLDiscoveryPanel loadComp={loadExternalComp} />
           <ReferencesPanel />
         </div>
