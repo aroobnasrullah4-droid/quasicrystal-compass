@@ -805,7 +805,7 @@ For research guidance only — experimental validation required.
                 <div className="flex items-center gap-2">
                   {loadedFrom && (
                     <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                      📚 Loaded from: {loadedFrom}
+                      Reference: {loadedFrom}
                     </span>
                   )}
                   <span className="data-mono text-xs text-muted-foreground">
