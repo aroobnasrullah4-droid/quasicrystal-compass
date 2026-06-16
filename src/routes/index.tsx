@@ -1198,6 +1198,9 @@ For research guidance only — experimental validation required.
           {/* Heat treatment / phase evolution */}
           <HeatTreatmentPanel comp={comp} predKind={pred.kind} />
 
+          {/* Co substitution phase map */}
+          <CoSubstitutionPanel />
+
           {/* Reference / literature group at bottom */}
           <ReferenceDataset loadExternalComp={loadExternalComp} predictFromExt={predictFromExt} />
           <MLDiscoveryPanel loadComp={loadExternalComp} />
