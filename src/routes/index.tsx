@@ -39,6 +39,7 @@ import { CNTPredictor } from "@/components/cnt-predictor";
 import { XRDVisualizer } from "@/components/xrd-visualizer";
 import { AIAnalysis } from "@/components/ai-analysis";
 import { ReferenceDataset } from "@/components/reference-dataset";
+import { HeatTreatmentPanel } from "@/components/heat-treatment";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -1192,6 +1193,9 @@ For research guidance only — experimental validation required.
 
           {/* Export */}
           <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
+
+          {/* Heat treatment / phase evolution */}
+          <HeatTreatmentPanel comp={comp} predKind={pred.kind} />
 
           {/* Reference / literature group at bottom */}
           <ReferenceDataset loadExternalComp={loadExternalComp} predictFromExt={predictFromExt} />
