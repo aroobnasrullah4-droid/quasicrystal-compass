@@ -38,6 +38,7 @@ import {
 import { CNTPredictor } from "@/components/cnt-predictor";
 import { XRDVisualizer } from "@/components/xrd-visualizer";
 import { AIAnalysis } from "@/components/ai-analysis";
+import { ReferenceDataset } from "@/components/reference-dataset";
 
 export const Route = createFileRoute("/")({
   head: () => ({
