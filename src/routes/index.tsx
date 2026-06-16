@@ -276,6 +276,10 @@ function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}):
   if (b > 3)  warnings.push("B > 3 at% — raises porosity, may exit i-QC window");
   if (cr > 0 && cr < 8) warnings.push(`Cr = ${cr.toFixed(1)} at% — partial i→d transition (i+d coexist near 3%)`);
   if (ni > 0) warnings.push(`Ni = ${ni.toFixed(1)} at% dissolved (tolerated ≤4)`);
+  if (ag > 0) warnings.push(`Ag = ${ag.toFixed(1)} at% (subs Cu) — antibacterial synergy via Cu/Cu₂O`);
+  if (zn > 0 && zn <= 4) warnings.push(`Zn = ${zn.toFixed(1)} at% (subs Cu) — boosts DIZ; QC+β retained`);
+  if (zn > 4) warnings.push(`Zn = ${zn.toFixed(1)} at% > 4 — exits validated Zn window`);
+  if (hints.porous) warnings.push("Porous PM compact — hardness penalty (~2.2 GPa vs ~7.85 GPa cast)");
   const warning = warnings.length ? warnings.join(" · ") : undefined;
 
   if (Al >= 60 && Al <= 72 && Cu >= 10 && Cu <= 27 && Fe >= 10 && Fe <= 15 && mnOK) {
@@ -284,9 +288,11 @@ function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}):
     const proximity = Math.max(0, 1 - Math.abs(e_a - eaCenter) / eaHalfWidth);
     const bBonus  = b  >= 1 && b  <= 3 ? 5 : 0;
     const siBonus = si >  0 && si <= 2 ? 5 : 0;        // Si ≤ 2 at% boosts i-QC volume fraction
+    const agBonus = ag > 0 && ag <= 1.5 ? 3 : 0;       // Ag ~1 at% antibacterial, no destabilization
+    const znBonus = zn > 0 && zn <= 4   ? 3 : 0;       // Zn 0.5–4 at% retains QC+β
     const coolingBonus = (hints.coolingRate ?? 0) > 1e4 ? 5 : 0; // rapid solidification
     const crPenalty = cr >= 2 && cr < 8 ? -15 : 0;     // partial i→d transition
-    const confidence = Math.max(20, Math.min(95, 65 + proximity * 25 + bBonus + siBonus + coolingBonus + crPenalty));
+    const confidence = Math.max(20, Math.min(95, 65 + proximity * 25 + bBonus + siBonus + agBonus + znBonus + coolingBonus + crPenalty));
     const kind: PredKind = cr >= 2 && cr < 8 ? "APPROX" : "QC";
     return {
       kind,
@@ -298,6 +304,8 @@ function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}):
         `Inside Al-Cu-Fe(-Mn) i-QC field. e/a = ${e_a.toFixed(3)} vs Hume-Rothery 1.75–1.86.` +
         (b  >= 1 ? ` B = ${b} at% refines grains.` : "") +
         (si >= 1 ? ` Si = ${si} at% boosts i-QC fraction, cuts porosity.` : "") +
+        (ag >  0 ? ` Ag = ${ag} at% adds antibacterial Cu/Cu₂O synergy.` : "") +
+        (zn >  0 ? ` Zn = ${zn} at% tunes e/a; best Gram−ve DIZ at Zn=4.` : "") +
         (cr >= 2 && cr < 8 ? ` Cr = ${cr} at% triggers partial i→d coexistence.` : ""),
       warning,
     };
