@@ -501,15 +501,15 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
               <div className="mt-2 rounded border border-border bg-background/40 p-2 font-mono text-[11px] text-muted-foreground space-y-0.5">
                 <div>Expected Raman peaks:</div>
                 <div>
-                  D band (~1350 cm⁻¹): <span className="text-foreground">{r.dband}</span> — defect density
+                  D band (~1350 cm⁻¹): <span className="text-foreground">{r.dband}</span> — disorder-induced scattering mode; intensity proportional to defect density
                 </div>
                 <div>
-                  G band (~1580 cm⁻¹): <span className="text-foreground">Strong</span> — graphitic carbon
+                  G band (~1580 cm⁻¹): <span className="text-foreground">Strong</span> — in-plane E₂g vibrational mode characteristic of sp² graphitic carbon
                 </div>
                 <div>
                   D/G ratio estimate: <span className="text-sky-300">{r.dgRatio.toFixed(2)}</span>
                 </div>
-                <div>2D band (~2700 cm⁻¹): present in few-walled CNTs</div>
+                <div>2D band (~2700 cm⁻¹): second-order overtone, indicative of few-walled CNTs</div>
               </div>
             </div>
 
