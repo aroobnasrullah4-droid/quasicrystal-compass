@@ -37,9 +37,7 @@ import {
 } from "@/components/qc-extras";
 import { CNTPredictor } from "@/components/cnt-predictor";
 import { XRDVisualizer } from "@/components/xrd-visualizer";
-import { FYPTracker } from "@/components/fyp-tracker";
 import { AIAnalysis } from "@/components/ai-analysis";
-import { SplashScreen } from "@/components/splash-screen";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,7 +46,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Predict quasicrystalline phase formation in Al-Cu-Fe-Mn alloys using rule-based heuristics. PIEAS FYP.",
+          "Computational tool for predicting quasicrystalline phase formation in Al-Cu-Fe-Mn quaternary alloy systems.",
       },
     ],
   }),
