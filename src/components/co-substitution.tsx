@@ -103,8 +103,22 @@ export function CoSubstitutionPanel() {
         </span>
       </div>
       <p style={{ margin: "0 0 14px", fontSize: 12, color: "var(--muted-foreground, #64748b)" }}>
-        Phase evolution as Co progressively replaces Fe in Al₆₅Cu₂₀Fe₁₅₋ₓCoₓ. Based on Shaitura &amp; Sukhanov (2007).
+        Phase evolution as Co progressively replaces Fe in Al₆₅Cu₂₀Fe₁₅₋ₓCoₓ.{" "}
+        <span style={{ fontStyle: "italic" }}>Source: Kim et al. (2002) J. Alloys Compd.</span>
       </p>
+      <div
+        style={{
+          fontSize: 11,
+          color: "#0EA5E9",
+          background: "rgba(14,165,233,0.08)",
+          border: "1px solid rgba(14,165,233,0.3)",
+          borderRadius: 8,
+          padding: "8px 10px",
+          marginBottom: 14,
+        }}
+      >
+        <strong>Note:</strong> Mn behaves differently from Co — see Ali et al. (2025) for Mn substitution effects.
+      </div>
 
       {/* Phase cards */}
       <div
