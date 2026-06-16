@@ -332,7 +332,7 @@ export function LeachingPanel({
       <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 07</div>
       <h2 className="text-lg font-semibold">Post-Leaching Surface Prediction</h2>
       <p className="text-sm text-muted-foreground mb-4">
-        Simulates surface composition after NaOH leaching — after Ali et al. (2025)
+        Simulation parameters derived from Ali et al. (2025) experimental data
       </p>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
