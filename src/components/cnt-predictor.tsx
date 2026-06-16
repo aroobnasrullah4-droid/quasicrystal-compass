@@ -240,7 +240,7 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
     URL.revokeObjectURL(url);
   };
 
-  const copyColab = () => {
+  const exportJSON = () => {
     const arr = log.map((l) => ({
       NaOH: l.naoh,
       leach_time: l.time,
@@ -251,8 +251,13 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
       DIZ: +l.diz.toFixed(2),
       catalyst: l.leached ? "leached" : "un-leached",
     }));
-    const py = `cnt_data = ${JSON.stringify(arr, null, 2)}\n\nimport pandas as pd\ndf = pd.DataFrame(cnt_data)\nprint(df.head())`;
-    void navigator.clipboard.writeText(py);
+    const blob = new Blob([JSON.stringify(arr, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cnt_experiments.json";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const naohColor = (v: number) => (v >= 8 && v <= 12 ? "#22c55e" : "#f59e0b");
@@ -330,7 +335,7 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
                 step={0.5}
                 value={p.naoh}
                 onChange={(v) => set("naoh", v)}
-                marker={{ at: 10, label: "★ Ali et al. 2025" }}
+                marker={{ at: 10, label: "(Ali et al., 2025)" }}
                 colorFn={naohColor}
               />
               <SliderRow
@@ -452,7 +457,7 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
                 <span>100</span>
                 <span>200 nm</span>
               </div>
-              <div className="mt-2 text-[10px] text-muted-foreground">Reference: Ali et al. 2025</div>
+              <div className="mt-2 text-[10px] text-muted-foreground">Reference: Ali et al. (2025)</div>
             </div>
 
             {/* Card 2 Yield */}
@@ -501,15 +506,15 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
               <div className="mt-2 rounded border border-border bg-background/40 p-2 font-mono text-[11px] text-muted-foreground space-y-0.5">
                 <div>Expected Raman peaks:</div>
                 <div>
-                  D band (~1350 cm⁻¹): <span className="text-foreground">{r.dband}</span> — defect density
+                  D band (~1350 cm⁻¹): <span className="text-foreground">{r.dband}</span> — disorder-induced scattering mode; intensity proportional to defect density
                 </div>
                 <div>
-                  G band (~1580 cm⁻¹): <span className="text-foreground">Strong</span> — graphitic carbon
+                  G band (~1580 cm⁻¹): <span className="text-foreground">Strong</span> — in-plane E₂g vibrational mode characteristic of sp² graphitic carbon
                 </div>
                 <div>
                   D/G ratio estimate: <span className="text-sky-300">{r.dgRatio.toFixed(2)}</span>
                 </div>
-                <div>2D band (~2700 cm⁻¹): present in few-walled CNTs</div>
+                <div>2D band (~2700 cm⁻¹): second-order overtone, indicative of few-walled CNTs</div>
               </div>
             </div>
 
@@ -527,13 +532,13 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
                   <div className="h-1.5 w-20 rounded bg-muted">
                     <div className="h-full rounded bg-slate-400" style={{ width: "53%" }} />
                   </div>
-                  <span>Un-leached QC ref: ~8 mm</span>
+                  <span>Un-leached QC reference: ~8 mm</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-20 rounded bg-muted">
                     <div className="h-full rounded bg-emerald-500" style={{ width: "100%" }} />
                   </div>
-                  <span>Leached QC+CNT (Ali 2025): ~15 mm</span>
+                  <span>Reference (Ali et al., 2025): ~15 mm</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-20 rounded bg-muted">
@@ -542,7 +547,7 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
                       style={{ width: `${Math.min(100, (r.diz / 20) * 100)}%` }}
                     />
                   </div>
-                  <span className="text-sky-300">Your prediction: {r.diz.toFixed(1)} mm</span>
+                  <span className="text-sky-300">Current prediction: {r.diz.toFixed(1)} mm</span>
                 </div>
               </div>
               <div className="mt-2 flex flex-wrap gap-1 text-[10px]">
@@ -659,10 +664,10 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
                   Export CSV
                 </button>
                 <button
-                  onClick={copyColab}
+                  onClick={exportJSON}
                   className="rounded border border-border px-2 py-1 text-xs hover:bg-muted"
                 >
-                  Copy to Colab
+                  Export JSON
                 </button>
                 <button
                   onClick={() => setLog([])}
@@ -722,7 +727,7 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
           {/* SECTION H — Reference Card */}
           <div className="rounded-md border border-sky-500/30 bg-sky-500/5 p-3 text-[11px] text-muted-foreground">
             <div className="mb-1 font-semibold text-foreground">
-              📋 Experimental Reference (Ali et al. 2025 — SSRN 5887591)
+              Experimental Reference (Ali et al., 2025 — SSRN 5887591)
             </div>
             <div>Leaching: 10M NaOH | QC System: AlCuFeMn</div>
             <div className="mt-1">

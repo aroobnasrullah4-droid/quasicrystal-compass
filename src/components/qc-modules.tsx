@@ -119,7 +119,7 @@ export function simulateLeaching(c: Comp, isQC: boolean, naoh: number): LeachRes
   }
   const cntRange =
     isQC && after.Cu > 20
-      ? "29–118 nm (Ali et al. 2025 — supervisor's data)"
+      ? "29–118 nm (Ali et al., 2025)"
       : isQC
         ? "17–45 nm (un-leached QC reference)"
         : "Phase mismatch — CNT growth unlikely";
@@ -241,7 +241,7 @@ export function PropertiesPanel({ props }: { props: Properties }) {
           </div>
           <Bar value={props.antibacterial} max={10} color={antiColor} />
           <p className="mt-2 text-[10px] text-muted-foreground">
-            Cu/Cu₂O active sites — primary mechanism (Sir Fahad Ali et al., 2025)
+            Cu/Cu₂O active sites — primary mechanism (Ali et al., 2025)
           </p>
         </div>
       </div>
@@ -332,7 +332,7 @@ export function LeachingPanel({
       <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 07</div>
       <h2 className="text-lg font-semibold">Post-Leaching Surface Prediction</h2>
       <p className="text-sm text-muted-foreground mb-4">
-        Simulates surface composition after NaOH leaching — after Ali et al. (2025)
+        Simulation parameters derived from Ali et al. (2025) experimental data
       </p>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
@@ -373,12 +373,13 @@ export function LeachingPanel({
         <div className="mt-2 text-xs text-muted-foreground">
           Predicted DIZ enhancement vs base alloy:{" "}
           <span className="data-mono text-primary">+{result.dizEnhancement.toFixed(1)}%</span>{" "}
-          <span className="italic">— synergistic Cu/Cu₂O + CNT effect (Ali et al. 2025)</span>
+          <span className="italic">— synergistic Cu/Cu₂O + CNT effect (Ali et al., 2025)</span>
         </div>
       </div>
     </section>
   );
 }
+
 
 // ============ COMPARISON MODE ============
 export interface Slot {
@@ -475,12 +476,12 @@ export function ComparisonPanel({
           <div className="mb-3 flex flex-wrap gap-2">
             {bestQCIdx >= 0 && (
               <span className="rounded-full bg-qc-positive/15 px-3 py-1 text-xs text-qc-positive border border-qc-positive/30">
-                ★ Best for QC: Comp {labels[bestQCIdx]}
+                ★ Optimal QC Composition: Comp {labels[bestQCIdx]}
               </span>
             )}
             {bestAntiIdx >= 0 && (
               <span className="rounded-full bg-primary/15 px-3 py-1 text-xs text-primary border border-primary/30">
-                ★ Best for Antibacterial: Comp {labels[bestAntiIdx]}
+                ★ Optimal Antibacterial Performance: Comp {labels[bestAntiIdx]}
               </span>
             )}
           </div>

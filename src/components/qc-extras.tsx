@@ -53,7 +53,7 @@ const ML_QCS = [
     system: "Al-Ir-Mn",
     comp: { Al: 78, Cu: 0, Fe: 0, Mn: 5 },
     note: "Ir substitutes for transition metal role",
-    detail: "Mn at 5 at% — same role as in Sir Fahad's Al-Cu-Fe-Mn system",
+    detail: "Mn at 5 at% — same role as in Ali et al. (2025) Al-Cu-Fe-Mn system",
     ea: 4.12,
     eaFormula: "(78×3 + 17×9 + 5×7)/100",
   },
@@ -128,11 +128,10 @@ export function MLDiscoveryPanel({
           </div>
 
           <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-foreground/90">
-            <div className="font-semibold text-amber-500 mb-1">💡 What This Means for Your FYP</div>
-            The model used Random Forest trained on the same type of compositional features you will use (e/a ratio,
-            electronegativity, atomic radius). The key difference: they worked on <b>ternary</b> systems. Your FYP
-            extends this to <b>quaternary</b> Al-Cu-Fe-Mn — adding Mn as a 4th variable. This is the research gap your
-            FYP fills.
+            <div className="font-semibold text-amber-500 mb-1">Research Context</div>
+            The model used Random Forest trained on the same type of compositional features used here (e/a ratio,
+            electronegativity, atomic radius). The key difference: prior ML work targeted <b>ternary</b> systems. The
+            quaternary Al-Cu-Fe-Mn space — adding Mn as a fourth variable — remains an open research direction.
           </div>
         </div>
       )}
@@ -438,16 +437,16 @@ export function DopantExplorer({
       )}
 
       <div className="mt-5 rounded-lg border border-primary/40 bg-primary/5 p-4 text-sm text-foreground/90">
-        <div className="font-semibold text-primary mb-1">🎓 FYP Opportunity: Mn IS your dopant.</div>
-        In Sir Fahad's system, Mn was added to Al-Cu-Fe to create Al-Cu-Fe-Mn. The effect:
+        <div className="font-semibold text-primary mb-1">Note: Mn as a Dopant in Al-Cu-Fe-Mn</div>
+        In Ali et al. (2025), Mn was added to Al-Cu-Fe to create the Al-Cu-Fe-Mn quaternary system. Reported effects:
         <ul className="mt-2 ml-5 list-disc space-y-1 text-foreground/80">
           <li>Mn's multiple oxidation states (+2 to +7) enhance catalytic performance</li>
           <li>Mn doping boosts antibacterial activity</li>
-          <li>Mn at 2–6 at% stabilizes QC phase</li>
-          <li>Mn &gt; 6 at% risks β-Mn competing phase</li>
+          <li>Mn at 2–6 at% stabilizes the QC phase</li>
+          <li>Mn &gt; 6 at% risks β-Mn competing phase formation</li>
         </ul>
         <div className="mt-2 italic text-xs text-muted-foreground">
-          This is exactly what the Dopant Explorer simulates — YOUR composition IS a doped QC.
+          The Dopant Explorer simulates these substitutional effects on the quaternary baseline.
         </div>
       </div>
     </section>
@@ -545,15 +544,42 @@ export function QCTypeIndicator() {
 }
 
 // ============ REFERENCES PANEL ============
-const REFS = [
-  { n: 1, text: "Ali, F. et al. (2025) — AlCuFeMn QC + CNT CVD for antibacterial applications. SSRN 5887591", doi: "10.2139/ssrn.5887591" },
-  { n: 2, text: "Ali, F. et al. (2020) — Antimicrobial leached Al-Cu-Fe QC.", doi: "10.1007/s00339-020-03611-5" },
-  { n: 3, text: "Uryu et al. / Liu et al. (2023) — QCs predicted and discovered by ML.", doi: "10.1103/PhysRevMaterials.7.093805" },
-  { n: 4, text: "Liu et al. (2021) — ML to predict QCs from chemical compositions.", doi: "10.1002/adma.202102507" },
-  { n: 5, text: "Fujita et al. (2024) — HYPOD-X: Comprehensive QC dataset.", doi: "10.1038/s41597-024-04043-z" },
-  { n: 6, text: "Murty et al. — Si addition expands e/a range for icosahedral phase. J. Mater. Sci.", doi: "" },
-  { n: 7, text: "Sukhova et al. — B addition to Al-Cu-Fe QC. Crystals (2024)", doi: "" },
-  { n: 8, text: "Tsai, A.P. et al. (1987) — Original Al-Cu-Fe icosahedral QC discovery.", doi: "10.1143/JJAP.26.L1505" },
+const REFS: { n: number; text: string; doi: string }[] = [
+  {
+    n: 1,
+    text: "Ali, F., et al. (2025). Leached AlCuFeMn quasicrystalline alloy for catalytic CNT growth and antibacterial applications. SSRN Preprint.",
+    doi: "10.2139/ssrn.5887591",
+  },
+  {
+    n: 2,
+    text: "Ali, F., et al. (2020). Antimicrobial properties of leached Al-Cu-Fe quasicrystalline alloy. Applied Physics A, 126, 614.",
+    doi: "10.1007/s00339-020-03611-5",
+  },
+  {
+    n: 3,
+    text: "Fujita, N., et al. (2024). HYPOD-X: Comprehensive experimental datasets of quasicrystals and their approximants. Scientific Data, 11, 1285.",
+    doi: "10.1038/s41597-024-04043-z",
+  },
+  {
+    n: 4,
+    text: "Liu, Y., et al. (2021). Machine learning to predict quasicrystals from chemical compositions. Advanced Materials, 33, 2102507.",
+    doi: "10.1002/adma.202102507",
+  },
+  {
+    n: 5,
+    text: "Uryu, M., et al. (2023). Three new decagonal quasicrystals predicted and discovered by machine learning. Physical Review Materials, 7, 093805.",
+    doi: "10.1103/PhysRevMaterials.7.093805",
+  },
+  {
+    n: 6,
+    text: "Tsai, A.P., et al. (1987). A stable quasicrystal in Al-Cu-Fe system. Japanese Journal of Applied Physics, 26, L1505.",
+    doi: "10.1143/JJAP.26.L1505",
+  },
+  {
+    n: 7,
+    text: "Sukhova, O., et al. (2024). Effect of B addition on Al-Cu-Fe quasicrystalline alloys. Crystals, 14, 142.",
+    doi: "",
+  },
 ];
 
 export function ReferencesPanel() {
@@ -564,7 +590,7 @@ export function ReferencesPanel() {
       <button onClick={() => setOpen((o) => !o)} className="flex w-full items-center justify-between p-4 text-left">
         <div>
           <div className="text-xs uppercase tracking-wider text-primary">Bibliography</div>
-          <h2 className="text-sm font-semibold">📚 Scientific References</h2>
+          <h2 className="text-sm font-semibold">References</h2>
         </div>
         <span className="text-muted-foreground">{open ? "▾" : "▸"}</span>
       </button>
@@ -573,11 +599,11 @@ export function ReferencesPanel() {
           {REFS.map((r) => (
             <li
               key={r.n}
-              className="flex items-start justify-between gap-3 rounded-md border border-border bg-secondary/40 px-3 py-2 text-xs"
+              className="flex items-start justify-between gap-3 rounded-md border border-border bg-secondary/40 px-3 py-2 text-[11px] text-muted-foreground"
             >
               <div>
                 <span className="font-semibold text-primary">[{r.n}]</span> {r.text}
-                {r.doi && <div className="data-mono text-[10px] text-muted-foreground mt-0.5">DOI: {r.doi}</div>}
+                {r.doi && <div className="data-mono text-[10px] text-muted-foreground/80 mt-0.5">DOI: {r.doi}</div>}
               </div>
               {r.doi && (
                 <button
