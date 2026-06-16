@@ -120,7 +120,7 @@ Provide expert scientific assessment.`;
           className="rounded border border-sky-500/40 bg-sky-500/10 px-3 py-1.5 text-sm font-semibold text-sky-200 hover:bg-sky-500/20 disabled:opacity-50"
           title="Ctrl+Shift+A"
         >
-          {loading ? "🧠 Analyzing..." : "🤖 Ask AI for Analysis"}
+          {loading ? "Analyzing..." : "AI-Assisted Analysis"}
         </button>
         {cooldown > 0 && (
           <span className="text-[10px] text-muted-foreground">Cooldown: {cooldown}s</span>
@@ -135,10 +135,11 @@ Provide expert scientific assessment.`;
 
       {lastResponse && (
         <div className="mt-3 rounded border-l-4 border-sky-400 bg-sky-500/5 p-3">
-          <div className="mb-1 text-xs font-semibold text-sky-300">🤖 AI Scientific Analysis</div>
+          <div className="mb-1 text-xs font-semibold text-sky-300">AI Scientific Analysis</div>
           <div className="whitespace-pre-wrap text-sm italic text-foreground/90">{lastResponse}</div>
           <div className="mt-2 text-[10px] text-muted-foreground">
-            Powered by Lovable AI (Gemini) — for research guidance only
+            AI-assisted analysis powered by large language model. Responses are for research
+            guidance only and require experimental validation.
           </div>
           <div className="mt-2 flex flex-wrap gap-1">
             {followUps.map((f) => (
@@ -154,8 +155,6 @@ Provide expert scientific assessment.`;
           </div>
         </div>
       )}
-
-      <div className="mt-2 text-[10px] text-muted-foreground">Tokens used: {tokens}</div>
     </div>
   );
 }
