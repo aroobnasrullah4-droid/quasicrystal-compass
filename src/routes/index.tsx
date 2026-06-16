@@ -41,6 +41,7 @@ import { AIAnalysis } from "@/components/ai-analysis";
 import { ReferenceDataset } from "@/components/reference-dataset";
 import { HeatTreatmentPanel } from "@/components/heat-treatment";
 import { CoSubstitutionPanel } from "@/components/co-substitution";
+import { Annealing600CPanel } from "@/components/annealing-600c";
 
 export const Route = createFileRoute("/")({
   head: () => ({
