@@ -53,7 +53,7 @@ const ML_QCS = [
     system: "Al-Ir-Mn",
     comp: { Al: 78, Cu: 0, Fe: 0, Mn: 5 },
     note: "Ir substitutes for transition metal role",
-    detail: "Mn at 5 at% — same role as in Sir Fahad's Al-Cu-Fe-Mn system",
+    detail: "Mn at 5 at% — same role as in Ali et al. (2025) Al-Cu-Fe-Mn system",
     ea: 4.12,
     eaFormula: "(78×3 + 17×9 + 5×7)/100",
   },
