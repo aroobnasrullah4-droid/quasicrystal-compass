@@ -59,11 +59,24 @@ export const Route = createFileRoute("/")({
 });
 
 // ============ ELEMENT DATA ============
+// Hume-Rothery effective valences (Raynor scheme) used for e/a in Al-TM systems.
+// Transition metals act as electron SINKS in Al-rich alloys, giving the small
+// e/a values (~1.75–1.86) where icosahedral QCs are stable. Group-number
+// valences would falsely give e/a ≈ 3.3 for the canonical Al₆₃Cu₂₅Fe₁₂ i-QC.
 const ELEMENTS = {
-  Al: { name: "Aluminum", valence: 3, vec: 3, en: 1.61, radius: 143, color: "#94a3b8" },
-  Cu: { name: "Copper", valence: 1, vec: 11, en: 1.9, radius: 128, color: "#f97316" },
-  Fe: { name: "Iron", valence: 8, vec: 8, en: 1.83, radius: 126, color: "#a78bfa" },
-  Mn: { name: "Manganese", valence: 7, vec: 7, en: 1.55, radius: 127, color: "#ec4899" },
+  Al: { name: "Aluminum",  valence:  3.00, vec: 3,  en: 1.61, radius: 143, color: "#94a3b8" },
+  Cu: { name: "Copper",    valence:  1.00, vec: 11, en: 1.90, radius: 128, color: "#f97316" },
+  Fe: { name: "Iron",      valence: -2.66, vec: 8,  en: 1.83, radius: 126, color: "#a78bfa" },
+  Mn: { name: "Manganese", valence: -3.66, vec: 7,  en: 1.55, radius: 127, color: "#ec4899" },
+} as const;
+
+// Extended recognized elements (not on sliders; used by reference scorer + AI).
+export const EXT_ELEMENTS = {
+  Ni: { valence:  0.00, note: "Effective ~0 in Al-rich; enables Al-Ni-Fe decagonal" },
+  Co: { valence: -1.71, note: "Co > 5 at% in Al-Cu-Fe-Co → decagonal QC (Kim 2002)" },
+  B:  { valence:  3.00, note: "1–3 at% B refines solidification, reduces brittleness, stays i-QC" },
+  Cr: { valence: -1.66, note: "Stabilizes i-QC in Al-Cu-Fe-Cr" },
+  Si: { valence:  4.00, note: "Expands i-QC e/a window (Murty et al.)" },
 } as const;
 
 type ElKey = keyof typeof ELEMENTS;
@@ -86,29 +99,29 @@ const PRESETS: { category: "QC" | "APPROX" | "ORDINARY"; title: string; items: P
     category: "QC",
     title: "✓ Strong QC Formers",
     items: [
-      { label: "Tsai Classic", comp: { Al: 65, Cu: 20, Fe: 10, Mn: 5 }, note: "Tsai et al. (1987) benchmark" },
-      { label: "Ali et al. (2025) — AlCuFeMn", comp: { Al: 63, Cu: 18, Fe: 12, Mn: 7 }, note: "SSRN 5887591 (2025)" },
-      { label: "Al-rich QC", comp: { Al: 70, Cu: 12, Fe: 13, Mn: 5 }, note: "High Al variant" },
-      { label: "High-Cu QC", comp: { Al: 62, Cu: 20, Fe: 13, Mn: 5 }, note: "High Cu variant" },
-      { label: "Standard QC", comp: { Al: 68, Cu: 15, Fe: 11, Mn: 6 }, note: "Literature standard" },
+      { label: "Al₆₃Cu₂₅Fe₁₂ (canonical i-QC)", comp: { Al: 63, Cu: 25, Fe: 12, Mn: 0 }, note: "Tsai — Hume-Rothery e/a ≈ 1.75" },
+      { label: "Al₆₅Cu₂₀Fe₁₅ (Rosas 1998)",     comp: { Al: 65, Cu: 20, Fe: 15, Mn: 0 }, note: "Pure i-QC at 700°C/72h" },
+      { label: "Ali et al. (2025) Mn-stabilized", comp: { Al: 63, Cu: 18, Fe: 12, Mn: 7 }, note: "Mn at upper edge — borderline" },
+      { label: "Al₆₅Cu₂₀Fe₁₀Mn₅",                comp: { Al: 65, Cu: 20, Fe: 10, Mn: 5 }, note: "Mn-doped i-QC" },
+      { label: "Al-rich i-QC",                    comp: { Al: 70, Cu: 15, Fe: 12, Mn: 3 }, note: "Al-rich variant" },
     ],
   },
   {
     category: "APPROX",
     title: "⚠ Approximant / Borderline",
     items: [
-      { label: "High Mn", comp: { Al: 63, Cu: 17, Fe: 12, Mn: 8 }, note: "β-Mn risk" },
-      { label: "Low Al", comp: { Al: 58, Cu: 22, Fe: 13, Mn: 7 }, note: "Al below threshold" },
-      { label: "Mn Limit", comp: { Al: 65, Cu: 18, Fe: 10, Mn: 7 }, note: "Mn at boundary" },
+      { label: "High Mn (β-Mn risk)", comp: { Al: 63, Cu: 17, Fe: 12, Mn: 8 }, note: "Mn > 6%" },
+      { label: "Low Al",              comp: { Al: 58, Cu: 22, Fe: 13, Mn: 7 }, note: "Al below threshold" },
+      { label: "Cu-edge",             comp: { Al: 60, Cu: 27, Fe: 10, Mn: 3 }, note: "Cu at upper canonical edge" },
     ],
   },
   {
     category: "ORDINARY",
     title: "✗ Non-QC / Ordinary Crystal",
     items: [
-      { label: "Al-excess", comp: { Al: 80, Cu: 8, Fe: 8, Mn: 4 }, note: "Al far too high" },
-      { label: "Al-deficient", comp: { Al: 55, Cu: 25, Fe: 15, Mn: 5 }, note: "Al too low" },
-      { label: "Fe-deficient", comp: { Al: 65, Cu: 20, Fe: 5, Mn: 10 }, note: "Fe low, Mn excessive" },
+      { label: "Al-excess",     comp: { Al: 80, Cu: 8,  Fe: 8,  Mn: 4 },  note: "Al far too high" },
+      { label: "Al-deficient",  comp: { Al: 55, Cu: 25, Fe: 15, Mn: 5 },  note: "Al too low" },
+      { label: "Fe-deficient",  comp: { Al: 65, Cu: 20, Fe: 5,  Mn: 10 }, note: "Fe low, Mn excessive" },
     ],
   },
 ];
@@ -116,11 +129,17 @@ const PRESETS: { category: "QC" | "APPROX" | "ORDINARY"; title: string; items: P
 // ============ CALCULATIONS ============
 function computeDescriptors(c: Comp) {
   const total = c.Al + c.Cu + c.Fe + c.Mn;
-  const e_a = (c.Al * 3 + c.Cu * 1 + c.Fe * 8 + c.Mn * 7) / 100;
+  // e/a uses Raynor effective valences (Fe, Mn negative). Hume-Rothery target
+  // for Al-Cu-Fe(-Mn) icosahedral QCs: e/a ≈ 1.75–1.86.
+  const e_a =
+    (c.Al * ELEMENTS.Al.valence +
+      c.Cu * ELEMENTS.Cu.valence +
+      c.Fe * ELEMENTS.Fe.valence +
+      c.Mn * ELEMENTS.Mn.valence) /
+    100;
   const en = (c.Al * 1.61 + c.Cu * 1.9 + c.Fe * 1.83 + c.Mn * 1.55) / 100;
   const radius = (c.Al * 143 + c.Cu * 128 + c.Fe * 126 + c.Mn * 127) / 100;
   const vec = (c.Al * 3 + c.Cu * 11 + c.Fe * 8 + c.Mn * 7) / 100;
-  // Atomic size mismatch δ (%)
   const r_avg = radius;
   const delta =
     Math.sqrt(
@@ -129,14 +148,13 @@ function computeDescriptors(c: Comp) {
         (c.Fe / 100) * Math.pow(1 - 126 / r_avg, 2) +
         (c.Mn / 100) * Math.pow(1 - 127 / r_avg, 2)
     ) * 100;
-  // Mixing entropy (J/mol·K)
   const R = 8.314;
   const xs: number[] = [c.Al, c.Cu, c.Fe, c.Mn].map((v) => v / 100).filter((x) => x > 0);
   const entropy = -R * xs.reduce((s, x) => s + x * Math.log(x), 0);
   return { e_a, en, radius, vec, total, delta, entropy };
 }
 
-type PredKind = "QC" | "APPROX" | "ORDINARY" | "INVALID";
+export type PredKind = "QC" | "DQC" | "APPROX" | "ORDINARY" | "INVALID";
 interface Prediction {
   kind: PredKind;
   label: string;
@@ -147,7 +165,14 @@ interface Prediction {
   warning?: string;
 }
 
-function predict(c: Comp, e_a: number, total: number): Prediction {
+// Optional hints from non-quaternary elements used by reference-dataset scoring.
+export interface PredictHints {
+  co?: number; // enables Decagonal QC branch
+  ni?: number;
+  b?: number;  // refines i-QC at 1–3 at%
+}
+
+function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}): Prediction {
   if (total < 98 || total > 102) {
     return {
       kind: "INVALID",
@@ -159,22 +184,48 @@ function predict(c: Comp, e_a: number, total: number): Prediction {
     };
   }
   const { Al, Cu, Fe, Mn } = c;
-  const warning = Mn > 6 ? "High Mn content (>6 at%) — competing β-Mn phase risk" : undefined;
+  const co = hints.co ?? 0;
+  const b = hints.b ?? 0;
 
-  if (Al >= 62 && Al <= 72 && Cu >= 10 && Cu <= 20 && Fe >= 10 && Fe <= 15 && Mn >= 2 && Mn <= 6) {
-    const proximity = Math.max(0, 1 - Math.abs(e_a - 1.86) / 0.15);
-    const confidence = Math.min(95, 70 + proximity * 25);
+  // Decagonal branch — Al-Cu-Fe-Co with Co ≥ 5 at% (Kim et al. 2002)
+  if (co >= 5 && Al >= 60 && Al <= 72 && Cu >= 15 && Cu <= 25) {
+    return {
+      kind: "DQC",
+      label: "Decagonal QC (d-phase)",
+      confidence: co >= 8 ? 85 : 65,
+      color: "#a855f7",
+      icon: "❉",
+      reasoning: `Co = ${co.toFixed(1)} at% drives d-QC formation (10-fold in-plane, periodic ⟂). Pure d-QC above ~8 at% Co (Kim 2002).`,
+      warning: co < 8 ? "i-QC + d-QC coexistence region (5–8 at% Co)" : undefined,
+    };
+  }
+
+  // Icosahedral i-QC band — canonical Al-Cu-Fe at Cu 24–25, Fe 10–15.
+  // Mn is OPTIONAL (0–6 at%); Mn = 0 still allowed. Mn > 6 penalized (β-Mn).
+  const mnOK = Mn >= 0 && Mn <= 6;
+  const warning =
+    Mn > 6 ? "High Mn (>6 at%) — β-Mn competing phase" :
+    b  > 3 ? "B > 3 at% — solidification effects exceed i-QC window" : undefined;
+
+  if (Al >= 60 && Al <= 72 && Cu >= 10 && Cu <= 27 && Fe >= 10 && Fe <= 15 && mnOK) {
+    // Hume-Rothery e/a target band 1.75–1.86 for Al-Cu-Fe(-Mn) i-QC
+    const eaCenter = 1.805;
+    const eaHalfWidth = 0.085;
+    const proximity = Math.max(0, 1 - Math.abs(e_a - eaCenter) / eaHalfWidth);
+    const bBonus = b >= 1 && b <= 3 ? 5 : 0;
+    const confidence = Math.min(95, 65 + proximity * 25 + bBonus);
     return {
       kind: "QC",
-      label: "Icosahedral Quasicrystalline Phase",
+      label: "Icosahedral QC (i-phase)",
       confidence,
       color: "#22C55E",
       icon: "✦",
-      reasoning: `Composition within Al-Cu-Fe-Mn QC phase field. e/a = ${e_a.toFixed(2)} — within icosahedral stability window.`,
+      reasoning: `Inside Al-Cu-Fe(-Mn) i-QC field. e/a = ${e_a.toFixed(3)} vs Hume-Rothery target 1.75–1.86.${b >= 1 ? ` B = ${b} at% refines solidification.` : ""}`,
       warning,
     };
   }
-  if (Al >= 58 && Al <= 75 && Cu >= 8 && Cu <= 22 && Fe >= 8 && Fe <= 17 && Mn >= 6 && Mn <= 9) {
+
+  if (Al >= 58 && Al <= 75 && Cu >= 8 && Cu <= 28 && Fe >= 8 && Fe <= 17 && Mn >= 0 && Mn <= 9) {
     const seed = (Al * 7.3 + Cu * 3.1 + Fe * 5.7 + Mn * 11.9) % 1;
     const confidence = 35 + seed * 20;
     return {
@@ -183,19 +234,22 @@ function predict(c: Comp, e_a: number, total: number): Prediction {
       confidence,
       color: "#F59E0B",
       icon: "◈",
-      reasoning: "Mn > 6 at% introduces β-Mn competing phase risk. Periodic approximant more likely than true QC.",
+      reasoning:
+        Mn > 6
+          ? "Mn > 6 at% destabilizes i-QC → periodic β-Mn approximant."
+          : "Adjacent to i-QC field — periodic approximant expected.",
       warning: warning ?? "Periodic approximant structure expected",
     };
   }
+
   const reasons: string[] = [];
-  if (Al < 62) reasons.push("Al too low (<62%)");
+  if (Al < 60) reasons.push("Al too low (<60%)");
   if (Al > 72) reasons.push("Al too high (>72%)");
   if (Cu < 10) reasons.push("Cu insufficient (<10%)");
-  if (Cu > 20) reasons.push("Cu excessive (>20%)");
+  if (Cu > 27) reasons.push("Cu excessive (>27%)");
   if (Fe < 10) reasons.push("Fe insufficient (<10%)");
   if (Fe > 15) reasons.push("Fe excessive (>15%)");
-  if (Mn > 9) reasons.push("Mn excessive (>9%)");
-  if (Mn < 2) reasons.push("Mn deficient (<2%)");
+  if (Mn > 6)  reasons.push("Mn excessive (>6%)");
   const seed = (Al * 7.3 + Cu * 3.1 + Fe * 5.7 + Mn * 11.9) % 1;
   const confidence = 10 + seed * 20;
   return {
@@ -204,10 +258,14 @@ function predict(c: Comp, e_a: number, total: number): Prediction {
     confidence,
     color: "#EF4444",
     icon: "◻",
-    reasoning: reasons.length ? `Outside QC phase field: ${reasons.join(", ")}` : `Outside QC phase field (e/a = ${e_a.toFixed(2)})`,
+    reasoning: reasons.length
+      ? `Outside QC phase field: ${reasons.join(", ")}`
+      : `Outside QC phase field (e/a = ${e_a.toFixed(3)})`,
     warning,
   };
 }
+
+export { predict, computeDescriptors };
 
 
 // ============ NORMALIZATION (Explorer mode) ============
@@ -368,10 +426,10 @@ function QCPredictor() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const predictFromExt = (c: Comp) => {
+  const predictFromExt = (c: Comp, hints: PredictHints = {}) => {
     const d = computeDescriptors(c);
-    const p = predict(c, d.e_a, d.total);
-    const pr = computeProperties(c, d.e_a, p.kind === "QC");
+    const p = predict(c, d.e_a, d.total, hints);
+    const pr = computeProperties(c, d.e_a, p.kind === "QC" || p.kind === "DQC");
     return {
       label: p.label,
       confidence: p.confidence,
@@ -1023,7 +1081,7 @@ For research guidance only — experimental validation required.
           {/* XRD sits right next to the prediction so users see the diffraction
               signature of the phase without scrolling */}
           <div className="lg:col-span-12">
-            <XRDVisualizer phaseKind={pred.kind === "INVALID" ? "ORDINARY" : pred.kind} cntYield={pred.kind === "QC" ? 20 : 0} />
+            <XRDVisualizer phaseKind={pred.kind === "QC" || pred.kind === "DQC" ? "QC" : pred.kind === "APPROX" ? "APPROX" : "ORDINARY"} cntYield={pred.kind === "QC" ? 20 : 0} />
           </div>
 
           {/* Properties group — predicted material behavior */}
@@ -1198,7 +1256,7 @@ For research guidance only — experimental validation required.
           <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
 
           {/* Heat treatment / phase evolution */}
-          <HeatTreatmentPanel comp={comp} predKind={pred.kind} />
+          <HeatTreatmentPanel comp={comp} predKind={pred.kind === "DQC" ? "QC" : pred.kind} />
 
           {/* 600°C isothermal annealing data */}
           <Annealing600CPanel />

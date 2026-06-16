@@ -20,7 +20,7 @@ export function computeProperties(c: Comp, e_a: number, isQC: boolean): Properti
   const meltingPoint = (c.Al * 660 + c.Cu * 1085 + c.Fe * 1538 + c.Mn * 1246) / 100;
   const thermalConductivity = (c.Al * 237 + c.Cu * 401 + c.Fe * 80 + c.Mn * 7.8) / 100;
   const resistivityTendency =
-    e_a >= 1.8 && e_a <= 1.95
+    e_a >= 1.72 && e_a <= 1.90
       ? "High resistivity expected ✦ (QC anomalous transport)"
       : "Normal metallic resistivity expected";
   const wearIndex = Math.min(10, (hardness / 900) * 6 + (1 - density / 8) * 4);
@@ -44,33 +44,27 @@ export function computeStability(c: Comp, e_a: number): { rules: StabilityRule[]
   const rules: StabilityRule[] = [
     {
       label: "Hume-Rothery e/a",
-      status: e_a >= 1.8 && e_a <= 1.95 ? "pass" : "fail",
-      detail: `e/a = ${e_a.toFixed(3)}`,
-      tooltip: "Icosahedral QC stable near e/a = 1.86",
+      status: e_a >= 1.75 && e_a <= 1.86 ? "pass" : e_a >= 1.70 && e_a <= 1.92 ? "warn" : "fail",
+      detail: `e/a = ${e_a.toFixed(3)} (target 1.75–1.86)`,
+      tooltip: "Al-Cu-Fe(-Mn) i-QC is Hume-Rothery stabilized at e/a ≈ 1.75–1.86 (Raynor effective valences).",
     },
     {
       label: "Al Content",
-      status: c.Al >= 62 && c.Al <= 72 ? "pass" : "warn",
-      detail: c.Al < 62 ? `Low (${c.Al.toFixed(1)}%)` : c.Al > 72 ? `High (${c.Al.toFixed(1)}%)` : `Optimal (${c.Al.toFixed(1)}%)`,
-      tooltip: "Al-rich matrix essential for QC formation",
+      status: c.Al >= 60 && c.Al <= 72 ? "pass" : "warn",
+      detail: c.Al < 60 ? `Low (${c.Al.toFixed(1)}%)` : c.Al > 72 ? `High (${c.Al.toFixed(1)}%)` : `Optimal (${c.Al.toFixed(1)}%)`,
+      tooltip: "Al-rich matrix essential for i-QC formation (60–72 at%).",
     },
     {
-      label: "Mn Doping",
-      status: c.Mn >= 2 && c.Mn <= 6 ? "pass" : c.Mn > 6 ? "warn" : "fail",
-      detail: c.Mn > 6 ? `Excess (${c.Mn.toFixed(1)}%)` : c.Mn < 2 ? `Low (${c.Mn.toFixed(1)}%)` : `Optimal (${c.Mn.toFixed(1)}%)`,
-      tooltip: "Mn enhances catalytic + antibacterial activity but excess destabilizes QC phase",
+      label: "Mn (optional stabilizer)",
+      status: c.Mn >= 0 && c.Mn <= 6 ? "pass" : "warn",
+      detail: c.Mn > 6 ? `Excess (${c.Mn.toFixed(1)}%)` : c.Mn === 0 ? "Absent (canonical Al-Cu-Fe i-QC OK)" : `OK (${c.Mn.toFixed(1)}%)`,
+      tooltip: "Mn is OPTIONAL. 0–6 at% acceptable. Mn > 6 risks β-Mn competing phase.",
     },
     {
-      label: "Cu/Fe Balance",
-      status: (() => {
-        const r = c.Fe > 0 ? c.Cu / c.Fe : 0;
-        return r >= 1.2 && r <= 1.8 ? "pass" : "warn";
-      })(),
-      detail: (() => {
-        const r = c.Fe > 0 ? c.Cu / c.Fe : 0;
-        return r > 1.8 ? `High (${r.toFixed(2)})` : r < 1.2 ? `Low (${r.toFixed(2)})` : `Optimal (${r.toFixed(2)})`;
-      })(),
-      tooltip: "Cu/Fe balance controls dodecahedral active site formation after leaching",
+      label: "Cu Content",
+      status: c.Cu >= 10 && c.Cu <= 27 ? "pass" : "warn",
+      detail: c.Cu < 10 ? `Low (${c.Cu.toFixed(1)}%)` : c.Cu > 27 ? `High (${c.Cu.toFixed(1)}%)` : `OK (${c.Cu.toFixed(1)}%)`,
+      tooltip: "Canonical Al-Cu-Fe i-QC sits at Cu 24–25 at%. Widened range 10–27.",
     },
   ];
   const passed = rules.filter((r) => r.status === "pass").length;
