@@ -111,6 +111,31 @@ const DATA: RawRow[] = [
 
   // Rapid solidification — high cooling rate favors i-QC, suppresses β
   { formula: "Al65Cu20Fe15 (melt-spun)", Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: null, UTS: null, source: "Melt-spinning", coolingRate: 1e6, note: ">1e4 °C/s suppresses β" },
+
+  // ── Batch 3: Ag/Zn antibacterial + processing-path rules ──
+  // Ag substitution (~1 at% replacing Cu) — antibacterial synergy with Cu/Cu₂O
+  { formula: "Al63Cu24Fe12Ag1",   Al: 63, Cr: 0, Cu: 24, Fe: 12, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Ag: 1,    phase: "i-QC", HV: null, UTS: null, source: "Ag-doped AlCuFe", DIZ_mm: 22, note: "Ag~1 at% — Cu/Cu₂O antibacterial synergy, stays i-QC" },
+
+  // Zn substitution (0.5–4 at% replacing Cu) — QC+β retained, DIZ tunable
+  { formula: "Al63Cu24.5Fe12Zn0.5", Al: 63, Cr: 0, Cu: 24.5, Fe: 12, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Zn: 0.5, phase: "i-QC + β", HV: null, UTS: null, source: "Zn-doped AlCuFe", DIZ_mm: 24, note: "Best Gram+ kill at Zn=0.5" },
+  { formula: "Al63Cu23Fe12Zn2",    Al: 63, Cr: 0, Cu: 23,   Fe: 12, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Zn: 2,   phase: "i-QC + β", HV: null, UTS: null, source: "Zn-doped AlCuFe", DIZ_mm: 25 },
+  { formula: "Al63Cu21Fe12Zn4",    Al: 63, Cr: 0, Cu: 21,   Fe: 12, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Zn: 4,   phase: "i-QC + β", HV: null, UTS: null, source: "Zn-doped AlCuFe", DIZ_mm: 26, note: "Best Gram− kill at Zn=4 (DIZ≈26 mm)" },
+
+  // Tcherdyntsev 2002 — MA-only vs MA + anneal reaction path
+  { formula: "Al65Cu20Fe15 (MA 20h, no anneal)", Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, millingHours: 20, annealedAboveC: 0,   phase: "β/B2 + unreacted", HV: null, UTS: null, source: "Tcherdyntsev 2002", note: "MA alone: bcc Al(Cu,Fe)+Al₂Cu → Al₇Cu₂Fe+D8.3; no QC" },
+  { formula: "Al65Cu20Fe15 (MA 20h + 400°C)",   Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, millingHours: 20, annealedAboveC: 400, phase: "β-Al(Cu,Fe)",      HV: null, UTS: null, source: "Tcherdyntsev 2002", note: "Anneal <500°C insufficient — β retained" },
+  { formula: "Al65Cu20Fe15 (MA 20h + 750°C)",   Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, millingHours: 20, annealedAboveC: 750, phase: "i-QC",             HV: null, UTS: null, source: "Tcherdyntsev 2002", note: "Single-phase i-QC after ≥700°C anneal" },
+
+  // Porosity hardness penalty: PM vs cast
+  { formula: "Al65Cu20Fe15 (PM, porous)", Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, porous: true, phase: "i-QC", HV: 220, HV_GPa: 2.2,  UTS: null, source: "PM thesis", note: "Porosity → ~2.2 GPa" },
+  { formula: "Al65Cu20Fe15 (cast/HIP)",   Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0,               phase: "i-QC", HV: 785, HV_GPa: 7.85, UTS: null, source: "Cast/HIP",  note: "Dense cast i-QC ~7.85 GPa" },
+
+  // NaOH leaching of Ag/Zn-doped i-QC — surface oxides as antibacterial sites
+  { formula: "Al60Cu24Fe14Ag1Zn1 (NaOH leached)", Al: 60, Cr: 0, Cu: 24, Fe: 14, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Ag: 1, Zn: 1, phase: "i-QC (core) + Cu/Cu₂O/CuFe₂O₄", HV: null, UTS: null, source: "Leaching study", leaching_agent: "NaOH", active_sites: "Cu, Fe, Cu₂O, CuFe₂O₄, β", note: "QC core preserved; oxide surface = antibacterial sites" },
+
+  // Single-phase Al-Cu-Fe QC window (phase-diagram boundaries)
+  { formula: "Al58Cu28Fe14 (window edge)", Al: 58, Cr: 0, Cu: 28, Fe: 14, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: null, UTS: null, source: "Phase diagram", note: "Lower-Al edge of pure Al-Cu-Fe i-QC window" },
+  { formula: "Al70Cu20Fe10 (window edge)", Al: 70, Cr: 0, Cu: 20, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: null, UTS: null, source: "Phase diagram", note: "Upper-Al edge; beyond → ω-phase boundary" },
 ];
 
 // Map dataset phase to predictor categories (now includes DQC)
