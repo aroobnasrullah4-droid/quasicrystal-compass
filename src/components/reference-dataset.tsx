@@ -24,6 +24,14 @@ interface RawRow {
   i_phase_pct?: number;
   wear_rate?: number;
   friction?: number;
+  note?: string;
+  E_GPa?: number;
+  K_IC_MPa_m?: number;
+  resistivity_uOhm_cm?: number;
+  grain_softening_nm?: number;
+  leaching_agent?: string;
+  application?: string;
+  active_sites?: string;
 }
 
 // Literature dataset (Inoue 2003; Shaitura & Sukhanov 2007)
@@ -54,6 +62,12 @@ const DATA: RawRow[] = [
   { formula: "Al57Cu33Fe10 (600°C/12h)", Al: 57, Cr: 0, Cu: 33, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: 736, UTS: null, source: "Lee 2020", anneal_temp: 600, anneal_h: 12, i_phase_pct: 68.85, wear_rate: 1.16e-4, friction: 0.331 },
   { formula: "Al57Cu33Fe10 (600°C/24h)", Al: 57, Cr: 0, Cu: 33, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: 750, UTS: null, source: "Lee 2020", anneal_temp: 600, anneal_h: 24, i_phase_pct: 75.84, wear_rate: 1.05e-4, friction: 0.304 },
   { formula: "Al57Cu33Fe10 (600°C/36h)", Al: 57, Cr: 0, Cu: 33, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: 763, UTS: null, source: "Lee 2020", anneal_temp: 600, anneal_h: 36, i_phase_pct: 81.75, wear_rate: 0.50e-4, friction: 0.252 },
+
+  // Mukhopadhyay & Yadav 2022 review + cited works
+  { formula: "Al63Cu24Fe13 (icosahedrite)", Al: 63, Cr: 0, Cu: 24, Fe: 13,   Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC",              HV: null, UTS: null, source: "Bindi 2009",                 note: "Icosahedrite — natural mineral" },
+  { formula: "Al62.5Cu25Fe12.5 (milled)",   Al: 62.5, Cr: 0, Cu: 25, Fe: 12.5, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC → B2 (milling)", HV: null, UTS: null, source: "Mukhopadhyay 2013",          grain_softening_nm: 40 },
+  { formula: "Al65Cu20Fe15 (bulk props)",   Al: 65, Cr: 0, Cu: 20, Fe: 15,   Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC",              HV: null, UTS: null, source: "Mukhopadhyay & Yadav 2022", E_GPa: 230, K_IC_MPa_m: 1.0, resistivity_uOhm_cm: 3950 },
+  { formula: "Al60Cu25Fe15 (NaOH leached)", Al: 60, Cr: 0, Cu: 25, Fe: 15,   Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC (catalyst)",   HV: null, UTS: null, source: "Kameoka 2004 (cited)",      leaching_agent: "NaOH", application: "H₂ via SRM", active_sites: "Cu/Fe + Fe₃O₄" },
 ];
 
 // Map dataset phase to predictor categories
@@ -200,6 +214,14 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
                     r.i_phase_pct != null ? `i-φ ${r.i_phase_pct}%` : null,
                     r.wear_rate != null ? `wear ${(r.wear_rate * 1e4).toFixed(2)}e-4` : null,
                     r.friction != null ? `μ ${r.friction}` : null,
+                    r.E_GPa != null ? `E ${r.E_GPa} GPa` : null,
+                    r.K_IC_MPa_m != null ? `K_IC ${r.K_IC_MPa_m} MPa·m^½` : null,
+                    r.resistivity_uOhm_cm != null ? `ρ ${r.resistivity_uOhm_cm} μΩ·cm` : null,
+                    r.grain_softening_nm != null ? `softening < ${r.grain_softening_nm} nm` : null,
+                    r.leaching_agent ? `leach: ${r.leaching_agent}` : null,
+                    r.application ? `app: ${r.application}` : null,
+                    r.active_sites ? `sites: ${r.active_sites}` : null,
+                    r.note ?? null,
                   ].filter(Boolean).join(" · ") || "—"}
                 </td>
                 <td className="px-2 py-1.5 text-right">
