@@ -198,7 +198,7 @@ export function HeatTreatmentPanel({ comp, predKind }: Props) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
+          gridTemplateColumns: "repeat(5, 1fr)",
           gap: 8,
           marginBottom: 18,
         }}
