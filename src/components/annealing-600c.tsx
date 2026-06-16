@@ -91,7 +91,7 @@ export function Annealing600CPanel() {
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--foreground, #0f172a)" }}>
-          Isothermal Annealing at 600 °C
+          Isothermal Annealing at 600 °C — Al₅₇Cu₃₃Fe₁₀
         </h3>
         <span
           style={{
@@ -108,7 +108,8 @@ export function Annealing600CPanel() {
         </span>
       </div>
       <p style={{ margin: "0 0 14px", fontSize: 12, color: "var(--muted-foreground, #64748b)" }}>
-        Evolution of i-phase fraction, grain size, hardness, and wear rate during isothermal anneal at 600 °C.
+        Evolution of i-phase fraction, grain size, hardness, friction, and wear rate during isothermal anneal at 600 °C.{" "}
+        <span style={{ fontStyle: "italic" }}>Source: Lee et al. (2020) Materials and Design.</span>
       </p>
 
       {/* Data cards */}
