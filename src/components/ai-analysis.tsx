@@ -13,7 +13,7 @@ const SYSTEM_PROMPT = `You are a materials science expert specializing in quasic
 - Quasicrystal phase formation rules
 - Hume-Rothery electron concentration
 - CNT growth via CVD on QC catalysts
-- Sir Fahad Ali's 2025 published work on AlCuFeMn QC + CNT antibacterial
+- Ali et al. (2025) on AlCuFeMn QC + CNT antibacterial systems
 - The HYPOD-X database and ML prediction approaches
 
 When given a composition, provide:
