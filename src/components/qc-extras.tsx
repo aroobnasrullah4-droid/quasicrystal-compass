@@ -128,11 +128,10 @@ export function MLDiscoveryPanel({
           </div>
 
           <div className="rounded-lg border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-foreground/90">
-            <div className="font-semibold text-amber-500 mb-1">💡 What This Means for Your FYP</div>
-            The model used Random Forest trained on the same type of compositional features you will use (e/a ratio,
-            electronegativity, atomic radius). The key difference: they worked on <b>ternary</b> systems. Your FYP
-            extends this to <b>quaternary</b> Al-Cu-Fe-Mn — adding Mn as a 4th variable. This is the research gap your
-            FYP fills.
+            <div className="font-semibold text-amber-500 mb-1">Research Context</div>
+            The model used Random Forest trained on the same type of compositional features used here (e/a ratio,
+            electronegativity, atomic radius). The key difference: prior ML work targeted <b>ternary</b> systems. The
+            quaternary Al-Cu-Fe-Mn space — adding Mn as a fourth variable — remains an open research direction.
           </div>
         </div>
       )}
