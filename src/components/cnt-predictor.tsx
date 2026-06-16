@@ -240,7 +240,7 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
     URL.revokeObjectURL(url);
   };
 
-  const copyColab = () => {
+  const exportJSON = () => {
     const arr = log.map((l) => ({
       NaOH: l.naoh,
       leach_time: l.time,
@@ -251,8 +251,13 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
       DIZ: +l.diz.toFixed(2),
       catalyst: l.leached ? "leached" : "un-leached",
     }));
-    const py = `cnt_data = ${JSON.stringify(arr, null, 2)}\n\nimport pandas as pd\ndf = pd.DataFrame(cnt_data)\nprint(df.head())`;
-    void navigator.clipboard.writeText(py);
+    const blob = new Blob([JSON.stringify(arr, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cnt_experiments.json";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const naohColor = (v: number) => (v >= 8 && v <= 12 ? "#22c55e" : "#f59e0b");
