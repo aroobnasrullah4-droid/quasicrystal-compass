@@ -475,7 +475,7 @@ export function ComparisonPanel({
           <div className="mb-3 flex flex-wrap gap-2">
             {bestQCIdx >= 0 && (
               <span className="rounded-full bg-qc-positive/15 px-3 py-1 text-xs text-qc-positive border border-qc-positive/30">
-                ★ Best for QC: Comp {labels[bestQCIdx]}
+                ★ Optimal QC Composition: Comp {labels[bestQCIdx]}
               </span>
             )}
             {bestAntiIdx >= 0 && (
