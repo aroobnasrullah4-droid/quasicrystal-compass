@@ -1081,7 +1081,7 @@ For research guidance only — experimental validation required.
           {/* XRD sits right next to the prediction so users see the diffraction
               signature of the phase without scrolling */}
           <div className="lg:col-span-12">
-            <XRDVisualizer phaseKind={pred.kind === "INVALID" ? "ORDINARY" : pred.kind} cntYield={pred.kind === "QC" ? 20 : 0} />
+            <XRDVisualizer phaseKind={pred.kind === "QC" || pred.kind === "DQC" ? "QC" : pred.kind === "APPROX" ? "APPROX" : "ORDINARY"} cntYield={pred.kind === "QC" ? 20 : 0} />
           </div>
 
           {/* Properties group — predicted material behavior */}
@@ -1256,7 +1256,7 @@ For research guidance only — experimental validation required.
           <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
 
           {/* Heat treatment / phase evolution */}
-          <HeatTreatmentPanel comp={comp} predKind={pred.kind} />
+          <HeatTreatmentPanel comp={comp} predKind={pred.kind === "DQC" ? "QC" : pred.kind} />
 
           {/* 600°C isothermal annealing data */}
           <Annealing600CPanel />
