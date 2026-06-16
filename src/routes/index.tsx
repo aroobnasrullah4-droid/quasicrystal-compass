@@ -434,12 +434,12 @@ function QCPredictor() {
         ? { color: "#F59E0B", text: `⚠ ${desc.total.toFixed(1)}% — normalize?`, bg: "rgba(245,158,11,0.1)" }
         : { color: "#EF4444", text: `✗ ${desc.total.toFixed(1)}% — invalid`, bg: "rgba(239,68,68,0.1)" };
 
-  const bibtex = `@software{QCPhasePredictor2026,
-  title = {QC Phase Predictor: ML-Inspired Composition Tool for Al-Cu-Fe-Mn Quasicrystals},
-  author = {PIEAS MME FYP and Ali, Fahad},
-  year = {2026},
-  institution = {PIEAS, Department of MME},
-  url = {${typeof window !== "undefined" ? window.location.origin : ""}}
+  const bibtex = `@software{QCPhasePredictor2025,
+  title  = {QC Phase Predictor: A Computational Tool for Quasicrystalline Phase Prediction in Al-Cu-Fe-Mn Systems},
+  author = {[Author] and Ali, F.},
+  year   = {2025},
+  note   = {Research Tool v2.0. Based on HYPOD-X database and established QC formation criteria.},
+  url    = {${typeof window !== "undefined" ? window.location.origin : ""}}
 }`;
 
   const pythonDict = (() => {
