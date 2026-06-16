@@ -452,7 +452,7 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
                 <span>100</span>
                 <span>200 nm</span>
               </div>
-              <div className="mt-2 text-[10px] text-muted-foreground">Reference: Ali et al. 2025</div>
+              <div className="mt-2 text-[10px] text-muted-foreground">Reference: Ali et al. (2025)</div>
             </div>
 
             {/* Card 2 Yield */}
