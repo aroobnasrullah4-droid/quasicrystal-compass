@@ -119,7 +119,7 @@ export function simulateLeaching(c: Comp, isQC: boolean, naoh: number): LeachRes
   }
   const cntRange =
     isQC && after.Cu > 20
-      ? "29–118 nm (Ali et al. 2025 — supervisor's data)"
+      ? "29–118 nm (Ali et al., 2025)"
       : isQC
         ? "17–45 nm (un-leached QC reference)"
         : "Phase mismatch — CNT growth unlikely";
