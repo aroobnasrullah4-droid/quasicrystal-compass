@@ -20,7 +20,7 @@ export function computeProperties(c: Comp, e_a: number, isQC: boolean): Properti
   const meltingPoint = (c.Al * 660 + c.Cu * 1085 + c.Fe * 1538 + c.Mn * 1246) / 100;
   const thermalConductivity = (c.Al * 237 + c.Cu * 401 + c.Fe * 80 + c.Mn * 7.8) / 100;
   const resistivityTendency =
-    e_a >= 1.8 && e_a <= 1.95
+    e_a >= 1.72 && e_a <= 1.90
       ? "High resistivity expected ✦ (QC anomalous transport)"
       : "Normal metallic resistivity expected";
   const wearIndex = Math.min(10, (hardness / 900) * 6 + (1 - density / 8) * 4);
