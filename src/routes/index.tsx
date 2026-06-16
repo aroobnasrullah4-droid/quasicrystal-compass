@@ -81,8 +81,8 @@ const PRESETS: { category: "QC" | "APPROX" | "ORDINARY"; title: string; items: P
     category: "QC",
     title: "✓ Strong QC Formers",
     items: [
-      { label: "Tsai Classic", comp: { Al: 65, Cu: 20, Fe: 10, Mn: 5 }, note: "Tsai et al. benchmark" },
-      { label: "Sir Fahad System", comp: { Al: 63, Cu: 18, Fe: 12, Mn: 7 }, note: "SSRN 2025" },
+      { label: "Tsai Classic", comp: { Al: 65, Cu: 20, Fe: 10, Mn: 5 }, note: "Tsai et al. (1987) benchmark" },
+      { label: "Ali et al. (2025) — AlCuFeMn", comp: { Al: 63, Cu: 18, Fe: 12, Mn: 7 }, note: "SSRN 5887591 (2025)" },
       { label: "Al-rich QC", comp: { Al: 70, Cu: 12, Fe: 13, Mn: 5 }, note: "High Al variant" },
       { label: "High-Cu QC", comp: { Al: 62, Cu: 20, Fe: 13, Mn: 5 }, note: "High Cu variant" },
       { label: "Standard QC", comp: { Al: 68, Cu: 15, Fe: 11, Mn: 6 }, note: "Literature standard" },
