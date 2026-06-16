@@ -16,6 +16,8 @@ interface RawRow {
   Co: number;
   Ni?: number;
   B?: number;
+  Si?: number;
+  coolingRate?: number; // °C/s
   phase: string;
   HV: number | null;
   UTS: number | null;
@@ -78,8 +80,30 @@ const DATA: RawRow[] = [
   { formula: "Al67Cu20Fe10B3 (MA 4h)",  Al: 67, Cr: 0, Cu: 20, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, B: 3, phase: "i-QC",        HV: null, UTS: null, source: "AlCuFeB MA",  mill_h: 4,  note: "Optimal i-QC at 4h MA" },
   { formula: "Al67Cu20Fe10B3 (MA 10h)", Al: 67, Cr: 0, Cu: 20, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, B: 3, phase: "β-Al(Cu,Fe)", HV: null, UTS: null, source: "AlCuFeB MA",  mill_h: 10, note: "Over-milling destroys QC" },
 
-  // Al-Ni-Fe decagonal (Ni-base, recognized element)
+  // Al-Ni-Fe decagonal
   { formula: "Al70Ni15Fe15", Al: 70, Cr: 0, Cu: 0, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Ni: 15, phase: "d-QC", HV: null, UTS: null, source: "Al-Ni-Fe lit.", note: "Decagonal — Ni replaces Cu role" },
+
+  // ── Batch 2: dopant-threshold calibration (Wolf 2020, Sukhova 2021) ──
+  // Cr on Al-Cu-Fe → drives i → d-QC transition
+  { formula: "Al65Cu20Fe12Cr3",  Al: 65, Cr: 3,  Cu: 20, Fe: 12, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC + d-QC", HV: null, UTS: null, source: "Wolf 2020",    note: "Cr ~3 at% → i+d coexist" },
+  { formula: "Al63Cu18Fe11Cr8",  Al: 63, Cr: 8,  Cu: 18, Fe: 11, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "d-QC",         HV: null, UTS: null, source: "Wolf 2020",    note: "Cr ≳8 at% → pure decagonal" },
+  { formula: "Al60Cu18Fe12Cr10", Al: 60, Cr: 10, Cu: 18, Fe: 12, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "d-QC",         HV: null, UTS: null, source: "Wolf 2020" },
+
+  // Ni dissolution / B2 destabilization (Sukhova 2021)
+  { formula: "Al65Cu20Fe11Ni4", Al: 65, Cr: 0, Cu: 20, Fe: 11, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Ni: 4, phase: "i-QC",  HV: null, UTS: null, source: "Sukhova 2021", note: "Ni ≤4 at% tolerated" },
+  { formula: "Al63Cu19Fe11Ni7", Al: 63, Cr: 0, Cu: 19, Fe: 11, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Ni: 7, phase: "i-QC + B2", HV: null, UTS: null, source: "Sukhova 2021", note: "Ni >4 → B2 forms" },
+  { formula: "Al60Cu18Fe13Ni9", Al: 60, Cr: 0, Cu: 18, Fe: 13, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Ni: 9, phase: "B2",       HV: null, UTS: null, source: "Sukhova 2021", note: "Ni ≈9 → B2 dominant" },
+
+  // Si substitution for Al (Sukhova 2021)
+  { formula: "Al63Cu20Fe15Si2",  Al: 63, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Si: 2, phase: "i-QC",        HV: 780, UTS: null, source: "Sukhova 2021", note: "Si ≤2 → higher i-QC fraction, lower porosity" },
+  { formula: "Al60Cu20Fe15Si5",  Al: 60, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Si: 5, phase: "i-QC",        HV: 760, UTS: null, source: "Sukhova 2021", note: "Si at upper edge" },
+  { formula: "Al58Cu20Fe15Si7",  Al: 58, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Si: 7, phase: "Approximant", HV: null, UTS: null, source: "Sukhova 2021", note: "Si >5 → approximant" },
+
+  // Si+B synergy (highest hardness + toughness)
+  { formula: "Al63Cu20Fe14Si2B1", Al: 63, Cr: 0, Cu: 20, Fe: 14, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, B: 1, Si: 2, phase: "i-QC", HV: 820, UTS: null, source: "Sukhova 2021", note: "Si+B synergy — peak HV + toughness" },
+
+  // Rapid solidification — high cooling rate favors i-QC, suppresses β
+  { formula: "Al65Cu20Fe15 (melt-spun)", Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: null, UTS: null, source: "Melt-spinning", coolingRate: 1e6, note: ">1e4 °C/s suppresses β" },
 ];
 
 // Map dataset phase to predictor categories (now includes DQC)
