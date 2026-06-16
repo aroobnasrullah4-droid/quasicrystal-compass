@@ -426,10 +426,10 @@ function QCPredictor() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const predictFromExt = (c: Comp) => {
+  const predictFromExt = (c: Comp, hints: PredictHints = {}) => {
     const d = computeDescriptors(c);
-    const p = predict(c, d.e_a, d.total);
-    const pr = computeProperties(c, d.e_a, p.kind === "QC");
+    const p = predict(c, d.e_a, d.total, hints);
+    const pr = computeProperties(c, d.e_a, p.kind === "QC" || p.kind === "DQC");
     return {
       label: p.label,
       confidence: p.confidence,
