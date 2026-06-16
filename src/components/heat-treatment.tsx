@@ -66,14 +66,16 @@ const TIMELINE: {
   },
 ];
 
-function statusColor(s: "mixed" | "pure" | "lost") {
+function statusColor(s: "mixed" | "pure" | "lost" | "transition") {
   if (s === "pure") return "#22C55E";
   if (s === "mixed") return "#F59E0B";
+  if (s === "transition") return "#8B5CF6";
   return "#EF4444";
 }
-function statusIcon(s: "mixed" | "pure" | "lost") {
+function statusIcon(s: "mixed" | "pure" | "lost" | "transition") {
   if (s === "pure") return "✓";
   if (s === "mixed") return "◐";
+  if (s === "transition") return "↔";
   return "✗";
 }
 
