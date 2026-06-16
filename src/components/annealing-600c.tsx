@@ -1,21 +1,28 @@
 import { useMemo, useState } from "react";
 
-// Annealing data at 600°C for Al-Cu-Fe-Mn QC alloy
-// Source: Experimental isothermal annealing study
+// Annealing data at 600°C for Al57Cu33Fe10
+// Source: Lee et al. (2020) Materials and Design
 interface DataPoint {
   time: number;
   iPhase: number;
   grainRadius: number;
   hv: number;
   wearRate: number;
+  friction: number;
 }
 
 const DATA: DataPoint[] = [
-  { time: 0, iPhase: 59.24, grainRadius: 3.47, hv: 712, wearRate: 2.21 },
-  { time: 12, iPhase: 68.85, grainRadius: 6.65, hv: 736, wearRate: 1.16 },
-  { time: 24, iPhase: 75.84, grainRadius: 8.62, hv: 750, wearRate: 1.05 },
-  { time: 36, iPhase: 81.75, grainRadius: 9.98, hv: 763, wearRate: 0.50 },
+  { time: 0,  iPhase: 59.24, grainRadius: 3.47, hv: 712, wearRate: 2.21, friction: 0.363 },
+  { time: 12, iPhase: 68.85, grainRadius: 6.65, hv: 736, wearRate: 1.16, friction: 0.331 },
+  { time: 24, iPhase: 75.84, grainRadius: 8.62, hv: 750, wearRate: 1.05, friction: 0.304 },
+  { time: 36, iPhase: 81.75, grainRadius: 9.98, hv: 763, wearRate: 0.50, friction: 0.252 },
 ];
+
+// Hardness prediction: HV = -0.01034 X² + 3.821 X + 521.6   (X = i-phase %)
+function predictHV(x: number) {
+  return -0.01034 * x * x + 3.821 * x + 521.6;
+}
+const OPTIMAL_IPHASE = 86.37;
 
 function TrendBar({ values, color, label, unit, min, max }: { values: number[]; color: string; label: string; unit: string; min?: number; max?: number }) {
   const vmin = min ?? Math.min(...values);
