@@ -192,6 +192,16 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
                 <td className="px-2 py-1.5 text-right">{r.HV ?? "—"}</td>
                 <td className="px-2 py-1.5 text-right">{r.UTS ?? "—"}</td>
                 <td className="px-2 py-1.5 font-sans text-muted-foreground">{r.source}</td>
+                <td className="px-2 py-1.5 font-sans text-[10px] text-muted-foreground">
+                  {[
+                    r.temp_C != null ? `${r.temp_C}°C` : null,
+                    r.time_h != null ? `${r.time_h}h` : null,
+                    r.anneal_temp != null ? `anneal ${r.anneal_temp}°C/${r.anneal_h ?? 0}h` : null,
+                    r.i_phase_pct != null ? `i-φ ${r.i_phase_pct}%` : null,
+                    r.wear_rate != null ? `wear ${(r.wear_rate * 1e4).toFixed(2)}e-4` : null,
+                    r.friction != null ? `μ ${r.friction}` : null,
+                  ].filter(Boolean).join(" · ") || "—"}
+                </td>
                 <td className="px-2 py-1.5 text-right">
                   <button
                     onClick={() => loadExternalComp(comp, r.formula)}
