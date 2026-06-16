@@ -196,8 +196,8 @@ export function HeatTreatmentPanel({ comp, predKind }: Props) {
         </span>
       </div>
       <p style={{ margin: "0 0 14px", fontSize: 12, color: "var(--muted-foreground, #64748b)" }}>
-        Evolution of phase content with annealing temperature and time. Based on Tsai et al. (1987), Bancel (1991),
-        Faudot et al. (1991).
+        Evolution of phase content with annealing temperature and time.{" "}
+        <span style={{ fontStyle: "italic" }}>Source: Rosas &amp; Perez (1998) Materials Letters.</span>
       </p>
 
       {/* TIMELINE */}
