@@ -167,9 +167,12 @@ interface Prediction {
 
 // Optional hints from non-quaternary elements used by reference-dataset scoring.
 export interface PredictHints {
-  co?: number; // enables Decagonal QC branch
-  ni?: number;
-  b?: number;  // refines i-QC at 1–3 at%
+  co?: number; // Co ≥ 5 at% → d-QC (Kim 2002)
+  cr?: number; // Cr ≳ 8 at% → d-QC, ~3 at% → i+d coexist (Wolf 2020)
+  ni?: number; // Ni > 4 at% destabilizes i-QC → B2 (Sukhova 2021)
+  b?: number;  // 1–3 at% B refines i-QC; >3 at% raises porosity
+  si?: number; // Si ≤ 2 at% boosts i-QC fraction; > 5 at% → approximant
+  coolingRate?: number; // °C/s; >1e4 favors i-QC, suppresses β
 }
 
 function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}): Prediction {
@@ -185,42 +188,90 @@ function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}):
   }
   const { Al, Cu, Fe, Mn } = c;
   const co = hints.co ?? 0;
-  const b = hints.b ?? 0;
+  const cr = hints.cr ?? 0;
+  const ni = hints.ni ?? 0;
+  const b  = hints.b  ?? 0;
+  const si = hints.si ?? 0;
 
-  // Decagonal branch — Al-Cu-Fe-Co with Co ≥ 5 at% (Kim et al. 2002)
+  // === Decagonal branches ===
+  // Al-Cu-Fe-Cr: ≳ 8 at% Cr drives pure d-QC (Wolf et al. 2020)
+  if (cr >= 8 && Al >= 60 && Al <= 72 && Cu >= 8 && Cu <= 27) {
+    return {
+      kind: "DQC",
+      label: "Decagonal QC (Cr-stabilized)",
+      confidence: 80,
+      color: "#a855f7",
+      icon: "❉",
+      reasoning: `Cr = ${cr.toFixed(1)} at% drives i → d-QC transition in Al-Cu-Fe-Cr (Wolf 2020).`,
+    };
+  }
+  // Al-Cu-Fe-Co: Co ≥ 5 at% (Kim 2002)
   if (co >= 5 && Al >= 60 && Al <= 72 && Cu >= 15 && Cu <= 25) {
     return {
       kind: "DQC",
-      label: "Decagonal QC (d-phase)",
+      label: "Decagonal QC (Co-stabilized)",
       confidence: co >= 8 ? 85 : 65,
       color: "#a855f7",
       icon: "❉",
-      reasoning: `Co = ${co.toFixed(1)} at% drives d-QC formation (10-fold in-plane, periodic ⟂). Pure d-QC above ~8 at% Co (Kim 2002).`,
+      reasoning: `Co = ${co.toFixed(1)} at% drives d-QC (10-fold in-plane). Pure d-QC above ~8 at% Co (Kim 2002).`,
       warning: co < 8 ? "i-QC + d-QC coexistence region (5–8 at% Co)" : undefined,
     };
   }
 
-  // Icosahedral i-QC band — canonical Al-Cu-Fe at Cu 24–25, Fe 10–15.
-  // Mn is OPTIONAL (0–6 at%); Mn = 0 still allowed. Mn > 6 penalized (β-Mn).
+  // === Hard destabilizers → approximant/ordinary ===
+  // Ni > 4 at% → B2 cubic phase dominates (Sukhova 2021)
+  if (ni > 4) {
+    return {
+      kind: ni >= 9 ? "ORDINARY" : "APPROX",
+      label: ni >= 9 ? "B2 cubic phase (Ni-dominated)" : "Approximant + B2 mix",
+      confidence: 55,
+      color: ni >= 9 ? "#EF4444" : "#F59E0B",
+      icon: ni >= 9 ? "◻" : "◈",
+      reasoning: `Ni = ${ni.toFixed(1)} at% exceeds 4 at% solubility — B2 cubic destabilizes i-QC (major at Ni ≈ 9).`,
+    };
+  }
+  // Si > 5 at% (replacing Al) → approximant
+  if (si > 5 && Al >= 55 && Cu >= 10 && Fe >= 10) {
+    return {
+      kind: "APPROX",
+      label: "Approximant (Si > 5%)",
+      confidence: 50,
+      color: "#F59E0B",
+      icon: "◈",
+      reasoning: `Si = ${si.toFixed(1)} at% exceeds i-QC tolerance; periodic Si-rich approximant expected.`,
+    };
+  }
+
+  // === Icosahedral i-QC band ===
   const mnOK = Mn >= 0 && Mn <= 6;
-  const warning =
-    Mn > 6 ? "High Mn (>6 at%) — β-Mn competing phase" :
-    b  > 3 ? "B > 3 at% — solidification effects exceed i-QC window" : undefined;
+  const warnings: string[] = [];
+  if (Mn > 6) warnings.push("High Mn (>6 at%) — β-Mn competing phase");
+  if (b > 3)  warnings.push("B > 3 at% — raises porosity, may exit i-QC window");
+  if (cr > 0 && cr < 8) warnings.push(`Cr = ${cr.toFixed(1)} at% — partial i→d transition (i+d coexist near 3%)`);
+  if (ni > 0) warnings.push(`Ni = ${ni.toFixed(1)} at% dissolved (tolerated ≤4)`);
+  const warning = warnings.length ? warnings.join(" · ") : undefined;
 
   if (Al >= 60 && Al <= 72 && Cu >= 10 && Cu <= 27 && Fe >= 10 && Fe <= 15 && mnOK) {
-    // Hume-Rothery e/a target band 1.75–1.86 for Al-Cu-Fe(-Mn) i-QC
     const eaCenter = 1.805;
     const eaHalfWidth = 0.085;
     const proximity = Math.max(0, 1 - Math.abs(e_a - eaCenter) / eaHalfWidth);
-    const bBonus = b >= 1 && b <= 3 ? 5 : 0;
-    const confidence = Math.min(95, 65 + proximity * 25 + bBonus);
+    const bBonus  = b  >= 1 && b  <= 3 ? 5 : 0;
+    const siBonus = si >  0 && si <= 2 ? 5 : 0;        // Si ≤ 2 at% boosts i-QC volume fraction
+    const coolingBonus = (hints.coolingRate ?? 0) > 1e4 ? 5 : 0; // rapid solidification
+    const crPenalty = cr >= 2 && cr < 8 ? -15 : 0;     // partial i→d transition
+    const confidence = Math.max(20, Math.min(95, 65 + proximity * 25 + bBonus + siBonus + coolingBonus + crPenalty));
+    const kind: PredKind = cr >= 2 && cr < 8 ? "APPROX" : "QC";
     return {
-      kind: "QC",
-      label: "Icosahedral QC (i-phase)",
+      kind,
+      label: kind === "QC" ? "Icosahedral QC (i-phase)" : "i-QC + d-QC coexistence (Cr ~3%)",
       confidence,
-      color: "#22C55E",
-      icon: "✦",
-      reasoning: `Inside Al-Cu-Fe(-Mn) i-QC field. e/a = ${e_a.toFixed(3)} vs Hume-Rothery target 1.75–1.86.${b >= 1 ? ` B = ${b} at% refines solidification.` : ""}`,
+      color: kind === "QC" ? "#22C55E" : "#F59E0B",
+      icon: kind === "QC" ? "✦" : "◈",
+      reasoning:
+        `Inside Al-Cu-Fe(-Mn) i-QC field. e/a = ${e_a.toFixed(3)} vs Hume-Rothery 1.75–1.86.` +
+        (b  >= 1 ? ` B = ${b} at% refines grains.` : "") +
+        (si >= 1 ? ` Si = ${si} at% boosts i-QC fraction, cuts porosity.` : "") +
+        (cr >= 2 && cr < 8 ? ` Cr = ${cr} at% triggers partial i→d coexistence.` : ""),
       warning,
     };
   }
@@ -241,6 +292,7 @@ function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}):
       warning: warning ?? "Periodic approximant structure expected",
     };
   }
+
 
   const reasons: string[] = [];
   if (Al < 60) reasons.push("Al too low (<60%)");
