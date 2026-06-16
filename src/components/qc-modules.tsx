@@ -480,7 +480,7 @@ export function ComparisonPanel({
             )}
             {bestAntiIdx >= 0 && (
               <span className="rounded-full bg-primary/15 px-3 py-1 text-xs text-primary border border-primary/30">
-                ★ Best for Antibacterial: Comp {labels[bestAntiIdx]}
+                ★ Optimal Antibacterial Performance: Comp {labels[bestAntiIdx]}
               </span>
             )}
           </div>
