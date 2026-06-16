@@ -105,51 +105,57 @@ function simulate(comp: Comp, predKind: Props["predKind"], T: number, hours: num
   // > 900 °C — β dominates, QC disappears
   if (T > 900) {
     return {
-      phase: "β dominates, QC disappears",
-      detail: `T = ${T} °C exceeds 900 °C — β-phase becomes dominant and quasicrystal is fully lost.`,
+      phase: "QC disappears ❌",
+      detail: `T = ${T} °C exceeds 900 °C — β-phase becomes dominant and quasicrystal decomposes.`,
       color: "#EF4444",
       icon: "✗",
     };
   }
 
-  // 884 °C — DTA-confirmed phase transition point
+  // 884 °C — peritectic transition point
   if (T >= 880 && T <= 900) {
     return {
-      phase: "Phase transition point (DTA confirmed)",
-      detail: `T = ${T} °C — at the DTA-confirmed transition limit (~884 °C). QC begins decomposing into β-phase.`,
+      phase: "Peritectic transition β → i-QC (DTA confirmed)",
+      detail: `T = ${T} °C — at the DTA-confirmed 884 °C peritectic boundary. QC stability limit.`,
       color: "#8B5CF6",
       icon: "↔",
     };
   }
 
-  // 850 °C — QC + β mixed (transition zone)
+  // 850 °C — QC + β coexistence
   if (T >= 850 && T < 880) {
     return {
-      phase: "QC + β mixed (transition zone)",
-      detail: `T = ${T} °C — transition zone. QC and β-phase coexist; QC fraction decreases as temperature rises.`,
+      phase: "QC + β coexistence region",
+      detail: `T = ${T} °C — QC and β-phase coexist; QC fraction decreases as temperature rises.`,
       color: "#8B5CF6",
       icon: "↔",
     };
   }
 
-  // 700–850 °C — QC forming (optimal: 700 °C, 72 h)
-  if (T >= 700 && T < 850 && hours >= 24) {
+  // 700 °C / 72 h — single QC ✅
+  if (T === 700 && hours >= 72) {
     return {
-      phase: T === 700 && hours >= 72 ? "Pure icosahedral QC" : "QC forming",
-      detail: `T = ${T} °C, t = ${hours} h — QC forming window.${
-        T === 700 && hours >= 72
-          ? " Optimal condition reached — single-phase i-QC expected."
-          : " Partial or growing QC. Increase time or move toward 700 °C for pure QC."
-      }${predKind === "APPROX" ? " Borderline composition — yield may be reduced." : ""}`,
-      color: T === 700 && hours >= 72 ? "#22C55E" : "#8B5CF6",
-      icon: T === 700 && hours >= 72 ? "✓" : "↔",
+      phase: "Single QC phase ✅",
+      detail: `T = 700 °C, t = ${hours} h — optimal window. Pure icosahedral QC achieved.`,
+      color: "#22C55E",
+      icon: "✓",
     };
   }
 
-  // < 700 °C — β + QC mixed
+  // 700–850 °C — QC forming
+  if (T >= 700 && T < 850) {
+    return {
+      phase: "QC formation zone",
+      detail: `T = ${T} °C, t = ${hours} h — within QC formation window. Move to 700 °C / 72 h for single-phase i-QC.${predKind === "APPROX" ? " Borderline composition — yield may be reduced." : ""}`,
+      color: "#8B5CF6",
+      icon: "↔",
+    };
+  }
+
+  // < 700 °C — β + QC mixed (kinetically limited)
   return {
-    phase: "β + QC mixed",
-    detail: `T = ${T} °C, t = ${hours} h — below optimal window. β-phase coexists with icosahedral QC nuclei.`,
+    phase: "β-phase + QC mixed (kinetically limited)",
+    detail: `T = ${T} °C, t = ${hours} h — below 700 °C. β-phase coexists with QC nuclei; ordering kinetics insufficient.`,
     color: "#F59E0B",
     icon: "◐",
   };
