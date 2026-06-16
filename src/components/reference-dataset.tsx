@@ -17,7 +17,12 @@ interface RawRow {
   Ni?: number;
   B?: number;
   Si?: number;
+  Ag?: number;
+  Zn?: number;
   coolingRate?: number; // °C/s
+  millingHours?: number;
+  annealedAboveC?: number;
+  porous?: boolean;
   phase: string;
   HV: number | null;
   UTS: number | null;
@@ -38,6 +43,8 @@ interface RawRow {
   leaching_agent?: string;
   application?: string;
   active_sites?: string;
+  DIZ_mm?: number;
+  HV_GPa?: number;
 }
 
 // Literature dataset
