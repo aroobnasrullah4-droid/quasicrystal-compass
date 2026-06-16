@@ -199,6 +199,26 @@ function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}):
   const ni = hints.ni ?? 0;
   const b  = hints.b  ?? 0;
   const si = hints.si ?? 0;
+  const ag = hints.ag ?? 0;
+  const zn = hints.zn ?? 0;
+
+  // === Mechanical alloying without sufficient anneal → β/B2, NOT QC ===
+  // Tcherdyntsev 2002: MA alone gives β-Al(Cu,Fe) + B2 + unreacted elements.
+  // Single-phase i-QC needs post-MA anneal at ≥700°C; <500°C keeps β.
+  if (hints.millingHours != null && hints.millingHours > 0) {
+    const annealed = hints.annealedAboveC ?? 0;
+    if (annealed < 500) {
+      return {
+        kind: "APPROX",
+        label: "β-Al(Cu,Fe) + B2 (MA, un-annealed)",
+        confidence: 60,
+        color: "#F59E0B",
+        icon: "◈",
+        reasoning: `Mechanical alloying ${hints.millingHours} h with anneal <500°C → bcc Al(Cu,Fe) + Al₂Cu / D8.3 path stops short of i-QC (Tcherdyntsev 2002).`,
+        warning: "QC only appears after annealing >500°C; single-phase needs ~700–800°C.",
+      };
+    }
+  }
 
   // === Decagonal branches ===
   // Al-Cu-Fe-Cr: ≳ 8 at% Cr drives pure d-QC (Wolf et al. 2020)
