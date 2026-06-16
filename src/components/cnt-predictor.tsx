@@ -727,7 +727,7 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
           {/* SECTION H — Reference Card */}
           <div className="rounded-md border border-sky-500/30 bg-sky-500/5 p-3 text-[11px] text-muted-foreground">
             <div className="mb-1 font-semibold text-foreground">
-              📋 Experimental Reference (Ali et al. 2025 — SSRN 5887591)
+              Experimental Reference (Ali et al., 2025 — SSRN 5887591)
             </div>
             <div>Leaching: 10M NaOH | QC System: AlCuFeMn</div>
             <div className="mt-1">
