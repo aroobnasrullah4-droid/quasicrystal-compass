@@ -400,18 +400,8 @@ function QCPredictor() {
     URL.revokeObjectURL(url);
   };
 
-  const copyColab = () => {
-    const arr = history.map((r) => ({
-      Al: +r.comp.Al.toFixed(2),
-      Cu: +r.comp.Cu.toFixed(2),
-      Fe: +r.comp.Fe.toFixed(2),
-      Mn: +r.comp.Mn.toFixed(2),
-      phase: r.pred.kind,
-      confidence: +r.pred.confidence.toFixed(1),
-    }));
-    const py = `compositions = ${JSON.stringify(arr)}\n\nimport pandas as pd\ndf = pd.DataFrame(compositions)\nprint(df.head())`;
-    navigator.clipboard?.writeText(py);
-  };
+
+
 
   const bestQC = useMemo(() => {
     const qcs = history.filter((r) => r.pred.kind === "QC");
