@@ -1,21 +1,28 @@
 import { useMemo, useState } from "react";
 
-// Annealing data at 600°C for Al-Cu-Fe-Mn QC alloy
-// Source: Experimental isothermal annealing study
+// Annealing data at 600°C for Al57Cu33Fe10
+// Source: Lee et al. (2020) Materials and Design
 interface DataPoint {
   time: number;
   iPhase: number;
   grainRadius: number;
   hv: number;
   wearRate: number;
+  friction: number;
 }
 
 const DATA: DataPoint[] = [
-  { time: 0, iPhase: 59.24, grainRadius: 3.47, hv: 712, wearRate: 2.21 },
-  { time: 12, iPhase: 68.85, grainRadius: 6.65, hv: 736, wearRate: 1.16 },
-  { time: 24, iPhase: 75.84, grainRadius: 8.62, hv: 750, wearRate: 1.05 },
-  { time: 36, iPhase: 81.75, grainRadius: 9.98, hv: 763, wearRate: 0.50 },
+  { time: 0,  iPhase: 59.24, grainRadius: 3.47, hv: 712, wearRate: 2.21, friction: 0.363 },
+  { time: 12, iPhase: 68.85, grainRadius: 6.65, hv: 736, wearRate: 1.16, friction: 0.331 },
+  { time: 24, iPhase: 75.84, grainRadius: 8.62, hv: 750, wearRate: 1.05, friction: 0.304 },
+  { time: 36, iPhase: 81.75, grainRadius: 9.98, hv: 763, wearRate: 0.50, friction: 0.252 },
 ];
+
+// Hardness prediction: HV = -0.01034 X² + 3.821 X + 521.6   (X = i-phase %)
+function predictHV(x: number) {
+  return -0.01034 * x * x + 3.821 * x + 521.6;
+}
+const OPTIMAL_IPHASE = 86.37;
 
 function TrendBar({ values, color, label, unit, min, max }: { values: number[]; color: string; label: string; unit: string; min?: number; max?: number }) {
   const vmin = min ?? Math.min(...values);
@@ -84,7 +91,7 @@ export function Annealing600CPanel() {
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
         <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "var(--foreground, #0f172a)" }}>
-          Isothermal Annealing at 600 °C
+          Isothermal Annealing at 600 °C — Al₅₇Cu₃₃Fe₁₀
         </h3>
         <span
           style={{
@@ -101,7 +108,8 @@ export function Annealing600CPanel() {
         </span>
       </div>
       <p style={{ margin: "0 0 14px", fontSize: 12, color: "var(--muted-foreground, #64748b)" }}>
-        Evolution of i-phase fraction, grain size, hardness, and wear rate during isothermal anneal at 600 °C.
+        Evolution of i-phase fraction, grain size, hardness, friction, and wear rate during isothermal anneal at 600 °C.{" "}
+        <span style={{ fontStyle: "italic" }}>Source: Lee et al. (2020) Materials and Design.</span>
       </p>
 
       {/* Data cards */}
@@ -136,6 +144,7 @@ export function Annealing600CPanel() {
                 <MetricRow label="i-phase" value={`${d.iPhase.toFixed(2)}%`} />
                 <MetricRow label="Grain radius" value={`${d.grainRadius.toFixed(2)} μm`} />
                 <MetricRow label="Hardness" value={`${d.hv} HV`} />
+                <MetricRow label="Friction μ" value={d.friction.toFixed(3)} />
                 <MetricRow label="Wear rate" value={`${d.wearRate.toFixed(2)}×10⁻⁴ mm³/Nm`} />
               </div>
             </div>
@@ -190,6 +199,52 @@ export function Annealing600CPanel() {
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Optimal concentration banner */}
+      <div
+        style={{
+          marginTop: 14,
+          borderRadius: 10,
+          padding: "10px 12px",
+          background: "rgba(34,197,94,0.10)",
+          border: "1px solid #22C55E55",
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <span style={{ fontSize: 18, color: "#22C55E", fontWeight: 700 }}>★</span>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#22C55E" }}>
+            Optimal concentration: {OPTIMAL_IPHASE}% i-phase (minimum wear rate)
+          </div>
+          <div style={{ fontSize: 10, color: "var(--muted-foreground,#64748b)", marginTop: 2 }}>
+            Extrapolated optimum beyond 36 h — wear rate minimized at peak i-phase fraction.
+          </div>
+        </div>
+      </div>
+
+      {/* Hardness prediction formula */}
+      <div
+        style={{
+          marginTop: 10,
+          borderRadius: 10,
+          padding: "10px 12px",
+          background: "rgba(59,130,246,0.08)",
+          border: "1px solid #3B82F655",
+        }}
+      >
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#3B82F6", marginBottom: 4 }}>
+          Hardness prediction (Lee et al. 2020)
+        </div>
+        <div style={{ fontSize: 12, fontFamily: "ui-monospace,monospace", color: "var(--foreground,#0f172a)" }}>
+          HV = −0.01034·X² + 3.821·X + 521.6
+        </div>
+        <div style={{ fontSize: 10, color: "var(--muted-foreground,#64748b)", marginTop: 4 }}>
+          where X = i-phase fraction (%). At X = {OPTIMAL_IPHASE}% → HV ≈ {predictHV(OPTIMAL_IPHASE).toFixed(1)}.
         </div>
       </div>
     </div>

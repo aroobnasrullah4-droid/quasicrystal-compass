@@ -24,35 +24,35 @@ const TIMELINE: {
     label: "< 700 °C",
     temp: "< 700 °C",
     time: "—",
-    phase: "β + QC mixed",
-    detail: "Below the optimal annealing window — β-phase coexists with icosahedral QC nuclei.",
+    phase: "β-phase + QC mixed",
+    detail: "Kinetically limited — β-phase coexists with QC nuclei; full QC ordering does not complete.",
     status: "mixed",
   },
   {
-    id: "700to850",
-    label: "700–850 °C",
-    temp: "700–850 °C",
-    time: "≥ 24 h",
-    phase: "QC forming",
-    detail: "Optimal annealing window. At 700 °C / 72 h, pure icosahedral QC is obtained.",
+    id: "700",
+    label: "700 °C ★",
+    temp: "700 °C",
+    time: "72 h",
+    phase: "QC formation zone",
+    detail: "Pure icosahedral QC at 700 °C / 72 h annealing — optimal experimental window.",
     status: "pure",
   },
   {
     id: "850",
     label: "850 °C",
     temp: "850 °C",
-    time: "short",
-    phase: "QC + β mixed",
-    detail: "Transition zone — QC and β-phase coexist. QC fraction decreases as temperature rises.",
+    time: "—",
+    phase: "QC + β coexistence",
+    detail: "QC and β-phase coexistence region — QC fraction decreases as temperature rises.",
     status: "transition",
   },
   {
     id: "884",
     label: "884 °C",
     temp: "884 °C",
-    time: "—",
-    phase: "Phase transition point",
-    detail: "DTA-confirmed transition temperature. QC stability limit — above this QC begins to decompose.",
+    time: "DTA",
+    phase: "Peritectic transition",
+    detail: "Peritectic transition β → i-QC (DTA confirmed). QC stability limit boundary.",
     status: "transition",
   },
   {
@@ -60,8 +60,8 @@ const TIMELINE: {
     label: "> 900 °C",
     temp: "> 900 °C",
     time: "—",
-    phase: "β dominates, QC disappears",
-    detail: "Above the QC stability ceiling — β-phase becomes dominant and quasicrystal is fully lost.",
+    phase: "β-phase dominant",
+    detail: "Above QC stability ceiling — β-phase becomes dominant and QC decomposes.",
     status: "lost",
   },
 ];
@@ -105,51 +105,57 @@ function simulate(comp: Comp, predKind: Props["predKind"], T: number, hours: num
   // > 900 °C — β dominates, QC disappears
   if (T > 900) {
     return {
-      phase: "β dominates, QC disappears",
-      detail: `T = ${T} °C exceeds 900 °C — β-phase becomes dominant and quasicrystal is fully lost.`,
+      phase: "QC disappears ❌",
+      detail: `T = ${T} °C exceeds 900 °C — β-phase becomes dominant and quasicrystal decomposes.`,
       color: "#EF4444",
       icon: "✗",
     };
   }
 
-  // 884 °C — DTA-confirmed phase transition point
+  // 884 °C — peritectic transition point
   if (T >= 880 && T <= 900) {
     return {
-      phase: "Phase transition point (DTA confirmed)",
-      detail: `T = ${T} °C — at the DTA-confirmed transition limit (~884 °C). QC begins decomposing into β-phase.`,
+      phase: "Peritectic transition β → i-QC (DTA confirmed)",
+      detail: `T = ${T} °C — at the DTA-confirmed 884 °C peritectic boundary. QC stability limit.`,
       color: "#8B5CF6",
       icon: "↔",
     };
   }
 
-  // 850 °C — QC + β mixed (transition zone)
+  // 850 °C — QC + β coexistence
   if (T >= 850 && T < 880) {
     return {
-      phase: "QC + β mixed (transition zone)",
-      detail: `T = ${T} °C — transition zone. QC and β-phase coexist; QC fraction decreases as temperature rises.`,
+      phase: "QC + β coexistence region",
+      detail: `T = ${T} °C — QC and β-phase coexist; QC fraction decreases as temperature rises.`,
       color: "#8B5CF6",
       icon: "↔",
     };
   }
 
-  // 700–850 °C — QC forming (optimal: 700 °C, 72 h)
-  if (T >= 700 && T < 850 && hours >= 24) {
+  // 700 °C / 72 h — single QC ✅
+  if (T === 700 && hours >= 72) {
     return {
-      phase: T === 700 && hours >= 72 ? "Pure icosahedral QC" : "QC forming",
-      detail: `T = ${T} °C, t = ${hours} h — QC forming window.${
-        T === 700 && hours >= 72
-          ? " Optimal condition reached — single-phase i-QC expected."
-          : " Partial or growing QC. Increase time or move toward 700 °C for pure QC."
-      }${predKind === "APPROX" ? " Borderline composition — yield may be reduced." : ""}`,
-      color: T === 700 && hours >= 72 ? "#22C55E" : "#8B5CF6",
-      icon: T === 700 && hours >= 72 ? "✓" : "↔",
+      phase: "Single QC phase ✅",
+      detail: `T = 700 °C, t = ${hours} h — optimal window. Pure icosahedral QC achieved.`,
+      color: "#22C55E",
+      icon: "✓",
     };
   }
 
-  // < 700 °C — β + QC mixed
+  // 700–850 °C — QC forming
+  if (T >= 700 && T < 850) {
+    return {
+      phase: "QC formation zone",
+      detail: `T = ${T} °C, t = ${hours} h — within QC formation window. Move to 700 °C / 72 h for single-phase i-QC.${predKind === "APPROX" ? " Borderline composition — yield may be reduced." : ""}`,
+      color: "#8B5CF6",
+      icon: "↔",
+    };
+  }
+
+  // < 700 °C — β + QC mixed (kinetically limited)
   return {
-    phase: "β + QC mixed",
-    detail: `T = ${T} °C, t = ${hours} h — below optimal window. β-phase coexists with icosahedral QC nuclei.`,
+    phase: "β-phase + QC mixed (kinetically limited)",
+    detail: `T = ${T} °C, t = ${hours} h — below 700 °C. β-phase coexists with QC nuclei; ordering kinetics insufficient.`,
     color: "#F59E0B",
     icon: "◐",
   };
@@ -190,8 +196,8 @@ export function HeatTreatmentPanel({ comp, predKind }: Props) {
         </span>
       </div>
       <p style={{ margin: "0 0 14px", fontSize: 12, color: "var(--muted-foreground, #64748b)" }}>
-        Evolution of phase content with annealing temperature and time. Based on Tsai et al. (1987), Bancel (1991),
-        Faudot et al. (1991).
+        Evolution of phase content with annealing temperature and time.{" "}
+        <span style={{ fontStyle: "italic" }}>Source: Rosas &amp; Perez (1998) Materials Letters.</span>
       </p>
 
       {/* TIMELINE */}
@@ -256,7 +262,7 @@ export function HeatTreatmentPanel({ comp, predKind }: Props) {
             Temperature: <strong style={{ color: "var(--foreground,#0f172a)" }}>{T} °C</strong>
             <input
               type="range"
-              min={400}
+              min={300}
               max={1000}
               step={10}
               value={T}
@@ -264,7 +270,7 @@ export function HeatTreatmentPanel({ comp, predKind }: Props) {
               style={{ width: "100%", marginTop: 4, accentColor: "#3B82F6" }}
             />
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, marginTop: 2 }}>
-              <span>400</span><span style={{ color: "#22C55E" }}>700 (opt)</span><span style={{ color: "#EF4444" }}>880+</span><span>1000</span>
+              <span>300</span><span style={{ color: "#22C55E" }}>700 ★</span><span style={{ color: "#8B5CF6" }}>884</span><span style={{ color: "#EF4444" }}>1000</span>
             </div>
           </label>
 
@@ -272,15 +278,15 @@ export function HeatTreatmentPanel({ comp, predKind }: Props) {
             Time: <strong style={{ color: "var(--foreground,#0f172a)" }}>{hours} h</strong>
             <input
               type="range"
-              min={0}
-              max={168}
+              min={1}
+              max={100}
               step={1}
               value={hours}
               onChange={(e) => setHours(+e.target.value)}
               style={{ width: "100%", marginTop: 4, accentColor: "#3B82F6" }}
             />
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, marginTop: 2 }}>
-              <span>0 (as-cast)</span><span>72 h</span><span>168 h</span>
+              <span>1 h</span><span style={{ color: "#22C55E" }}>72 h ★</span><span>100 h</span>
             </div>
           </label>
         </div>
@@ -307,10 +313,11 @@ export function HeatTreatmentPanel({ comp, predKind }: Props) {
 
         <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
           {[
-            { label: "As-cast", T: 700, h: 0 },
-            { label: "850 °C short", T: 850, h: 4 },
-            { label: "700 °C / 72 h ✓", T: 700, h: 72 },
-            { label: "900 °C", T: 900, h: 24 },
+            { label: "< 700 °C", T: 650, h: 24 },
+            { label: "700 °C / 72 h ✅", T: 700, h: 72 },
+            { label: "850 °C", T: 850, h: 12 },
+            { label: "884 °C (DTA)", T: 884, h: 4 },
+            { label: "900 °C ❌", T: 950, h: 24 },
           ].map((p) => (
             <button
               key={p.label}
