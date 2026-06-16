@@ -772,7 +772,16 @@ For research guidance only — experimental validation required.
           <section className="lg:col-span-5 rounded-xl border border-border bg-card p-5">
             <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 02</div>
             <h2 className="text-lg font-semibold">Phase Prediction Result</h2>
-            <p className="text-sm text-muted-foreground mb-4">Heuristic rule-based inference</p>
+            <p className="text-sm text-muted-foreground mb-3">Heuristic rule-based inference</p>
+            <div className="mb-4">
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground"
+                title="Rule-based predictions from established QC formation criteria. ML model integration in development."
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
+                Heuristic Engine
+              </span>
+            </div>
 
             <div
               key={pulseKey}
