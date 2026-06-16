@@ -77,6 +77,8 @@ export const EXT_ELEMENTS = {
   B:  { valence:  3.00, note: "1–3 at% B refines solidification, reduces brittleness, stays i-QC" },
   Cr: { valence: -1.66, note: "Stabilizes i-QC in Al-Cu-Fe-Cr" },
   Si: { valence:  4.00, note: "Expands i-QC e/a window (Murty et al.)" },
+  Ag: { valence:  1.00, note: "~1 at% Ag (substituting Cu) → antibacterial synergy with Cu/Cu₂O, stays i-QC" },
+  Zn: { valence:  2.00, note: "0.5–4 at% Zn (substituting Cu) tunes e/a, boosts DIZ; QC+β retained" },
 } as const;
 
 type ElKey = keyof typeof ELEMENTS;
@@ -172,7 +174,12 @@ export interface PredictHints {
   ni?: number; // Ni > 4 at% destabilizes i-QC → B2 (Sukhova 2021)
   b?: number;  // 1–3 at% B refines i-QC; >3 at% raises porosity
   si?: number; // Si ≤ 2 at% boosts i-QC fraction; > 5 at% → approximant
+  ag?: number; // ~1 at% Ag (subs Cu) → antibacterial synergy, stays i-QC
+  zn?: number; // 0.5–4 at% Zn (subs Cu) → QC+β retained, antibacterial boost
   coolingRate?: number; // °C/s; >1e4 favors i-QC, suppresses β
+  millingHours?: number; // MA-only (no anneal); >6 h → β/B2 dominant, no QC
+  annealedAboveC?: number; // post-MA anneal temp; <500°C keeps β; ≥700°C → single-phase i-QC
+  porous?: boolean; // powder-metallurgy porous compact → HV penalty (~2.2 GPa vs ~7.85 GPa cast)
 }
 
 function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}): Prediction {
