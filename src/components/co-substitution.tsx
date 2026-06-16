@@ -1,10 +1,4 @@
-import { useMemo, useState } from "react";
-
-type Comp = { Al: number; Cu: number; Fe: number; Mn: number };
-
-interface Props {
-  comp: Comp;
-}
+import { useState } from "react";
 
 // Phase evolution for Al65Cu20Fe(15-x)Co(x)
 // Source: Shaitura & Sukhanov (2007) — Co substitution in Al-Cu-Fe QC
@@ -77,24 +71,8 @@ function statusIcon(s: "pure" | "mixed" | "transition" | "lost") {
   return "✗";
 }
 
-function closestDataPoint(comp: Comp) {
-  const coVal = comp.Co ?? 0;
-  let best = PHASE_DATA[0];
-  let bestDiff = Infinity;
-  for (const d of PHASE_DATA) {
-    const diff = Math.abs(d.Co - coVal);
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      best = d;
-    }
-  }
-  return best;
-}
-
-export function CoSubstitutionPanel({ comp }: Props) {
+export function CoSubstitutionPanel() {
   const [highlighted, setHighlighted] = useState<number | null>(null);
-
-  const current = useMemo(() => closestDataPoint(comp), [comp]);
 
   return (
     <div
