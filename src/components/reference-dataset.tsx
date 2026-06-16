@@ -24,6 +24,14 @@ interface RawRow {
   i_phase_pct?: number;
   wear_rate?: number;
   friction?: number;
+  note?: string;
+  E_GPa?: number;
+  K_IC_MPa_m?: number;
+  resistivity_uOhm_cm?: number;
+  grain_softening_nm?: number;
+  leaching_agent?: string;
+  application?: string;
+  active_sites?: string;
 }
 
 // Literature dataset (Inoue 2003; Shaitura & Sukhanov 2007)
