@@ -313,10 +313,11 @@ export function HeatTreatmentPanel({ comp, predKind }: Props) {
 
         <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
           {[
-            { label: "As-cast", T: 700, h: 0 },
-            { label: "850 °C short", T: 850, h: 4 },
-            { label: "700 °C / 72 h ✓", T: 700, h: 72 },
-            { label: "900 °C", T: 900, h: 24 },
+            { label: "< 700 °C", T: 650, h: 24 },
+            { label: "700 °C / 72 h ✅", T: 700, h: 72 },
+            { label: "850 °C", T: 850, h: 12 },
+            { label: "884 °C (DTA)", T: 884, h: 4 },
+            { label: "900 °C ❌", T: 950, h: 24 },
           ].map((p) => (
             <button
               key={p.label}
