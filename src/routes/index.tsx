@@ -1180,7 +1180,7 @@ For research guidance only — experimental validation required.
                           </td>
                           <td className="px-2 py-1.5 text-right">{r.pred.confidence.toFixed(1)}</td>
                           <td className="px-2 py-1.5 text-left text-muted-foreground font-sans">
-                            {r.source}
+                            {r.source === "Literature" ? "Reference Composition" : "User-Defined"}
                           </td>
                         </tr>
                       );
