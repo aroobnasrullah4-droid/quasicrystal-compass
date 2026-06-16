@@ -241,7 +241,7 @@ export function PropertiesPanel({ props }: { props: Properties }) {
           </div>
           <Bar value={props.antibacterial} max={10} color={antiColor} />
           <p className="mt-2 text-[10px] text-muted-foreground">
-            Cu/Cu₂O active sites — primary mechanism (Sir Fahad Ali et al., 2025)
+            Cu/Cu₂O active sites — primary mechanism (Ali et al., 2025)
           </p>
         </div>
       </div>
