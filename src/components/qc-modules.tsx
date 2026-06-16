@@ -373,12 +373,13 @@ export function LeachingPanel({
         <div className="mt-2 text-xs text-muted-foreground">
           Predicted DIZ enhancement vs base alloy:{" "}
           <span className="data-mono text-primary">+{result.dizEnhancement.toFixed(1)}%</span>{" "}
-          <span className="italic">— synergistic Cu/Cu₂O + CNT effect (Ali et al. 2025)</span>
+          <span className="italic">— synergistic Cu/Cu₂O + CNT effect (Ali et al., 2025)</span>
         </div>
       </div>
     </section>
   );
 }
+
 
 // ============ COMPARISON MODE ============
 export interface Slot {
