@@ -338,6 +338,8 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
                 <td className="px-2 py-1.5 text-right">{r.Ni ?? "—"}</td>
                 <td className="px-2 py-1.5 text-right">{r.B ?? "—"}</td>
                 <td className="px-2 py-1.5 text-right">{r.Si ?? "—"}</td>
+                <td className="px-2 py-1.5 text-right">{r.Ag ?? "—"}</td>
+                <td className="px-2 py-1.5 text-right">{r.Zn ?? "—"}</td>
 
                 <td className="px-2 py-1.5 text-right text-amber-300">
                   {otherPct > 0 ? otherPct.toFixed(1) : "—"}
