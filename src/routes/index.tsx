@@ -41,6 +41,7 @@ import { AIAnalysis } from "@/components/ai-analysis";
 import { ReferenceDataset } from "@/components/reference-dataset";
 import { HeatTreatmentPanel } from "@/components/heat-treatment";
 import { CoSubstitutionPanel } from "@/components/co-substitution";
+import { Annealing600CPanel } from "@/components/annealing-600c";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -1197,6 +1198,9 @@ For research guidance only — experimental validation required.
 
           {/* Heat treatment / phase evolution */}
           <HeatTreatmentPanel comp={comp} predKind={pred.kind} />
+
+          {/* 600°C isothermal annealing data */}
+          <Annealing600CPanel />
 
           {/* Co substitution phase map */}
           <CoSubstitutionPanel />
