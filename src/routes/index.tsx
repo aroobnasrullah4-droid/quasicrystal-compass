@@ -77,6 +77,8 @@ export const EXT_ELEMENTS = {
   B:  { valence:  3.00, note: "1–3 at% B refines solidification, reduces brittleness, stays i-QC" },
   Cr: { valence: -1.66, note: "Stabilizes i-QC in Al-Cu-Fe-Cr" },
   Si: { valence:  4.00, note: "Expands i-QC e/a window (Murty et al.)" },
+  Ag: { valence:  1.00, note: "~1 at% Ag (substituting Cu) → antibacterial synergy with Cu/Cu₂O, stays i-QC" },
+  Zn: { valence:  2.00, note: "0.5–4 at% Zn (substituting Cu) tunes e/a, boosts DIZ; QC+β retained" },
 } as const;
 
 type ElKey = keyof typeof ELEMENTS;
@@ -172,7 +174,12 @@ export interface PredictHints {
   ni?: number; // Ni > 4 at% destabilizes i-QC → B2 (Sukhova 2021)
   b?: number;  // 1–3 at% B refines i-QC; >3 at% raises porosity
   si?: number; // Si ≤ 2 at% boosts i-QC fraction; > 5 at% → approximant
+  ag?: number; // ~1 at% Ag (subs Cu) → antibacterial synergy, stays i-QC
+  zn?: number; // 0.5–4 at% Zn (subs Cu) → QC+β retained, antibacterial boost
   coolingRate?: number; // °C/s; >1e4 favors i-QC, suppresses β
+  millingHours?: number; // MA-only (no anneal); >6 h → β/B2 dominant, no QC
+  annealedAboveC?: number; // post-MA anneal temp; <500°C keeps β; ≥700°C → single-phase i-QC
+  porous?: boolean; // powder-metallurgy porous compact → HV penalty (~2.2 GPa vs ~7.85 GPa cast)
 }
 
 function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}): Prediction {
@@ -192,6 +199,26 @@ function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}):
   const ni = hints.ni ?? 0;
   const b  = hints.b  ?? 0;
   const si = hints.si ?? 0;
+  const ag = hints.ag ?? 0;
+  const zn = hints.zn ?? 0;
+
+  // === Mechanical alloying without sufficient anneal → β/B2, NOT QC ===
+  // Tcherdyntsev 2002: MA alone gives β-Al(Cu,Fe) + B2 + unreacted elements.
+  // Single-phase i-QC needs post-MA anneal at ≥700°C; <500°C keeps β.
+  if (hints.millingHours != null && hints.millingHours > 0) {
+    const annealed = hints.annealedAboveC ?? 0;
+    if (annealed < 500) {
+      return {
+        kind: "APPROX",
+        label: "β-Al(Cu,Fe) + B2 (MA, un-annealed)",
+        confidence: 60,
+        color: "#F59E0B",
+        icon: "◈",
+        reasoning: `Mechanical alloying ${hints.millingHours} h with anneal <500°C → bcc Al(Cu,Fe) + Al₂Cu / D8.3 path stops short of i-QC (Tcherdyntsev 2002).`,
+        warning: "QC only appears after annealing >500°C; single-phase needs ~700–800°C.",
+      };
+    }
+  }
 
   // === Decagonal branches ===
   // Al-Cu-Fe-Cr: ≳ 8 at% Cr drives pure d-QC (Wolf et al. 2020)
@@ -249,6 +276,10 @@ function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}):
   if (b > 3)  warnings.push("B > 3 at% — raises porosity, may exit i-QC window");
   if (cr > 0 && cr < 8) warnings.push(`Cr = ${cr.toFixed(1)} at% — partial i→d transition (i+d coexist near 3%)`);
   if (ni > 0) warnings.push(`Ni = ${ni.toFixed(1)} at% dissolved (tolerated ≤4)`);
+  if (ag > 0) warnings.push(`Ag = ${ag.toFixed(1)} at% (subs Cu) — antibacterial synergy via Cu/Cu₂O`);
+  if (zn > 0 && zn <= 4) warnings.push(`Zn = ${zn.toFixed(1)} at% (subs Cu) — boosts DIZ; QC+β retained`);
+  if (zn > 4) warnings.push(`Zn = ${zn.toFixed(1)} at% > 4 — exits validated Zn window`);
+  if (hints.porous) warnings.push("Porous PM compact — hardness penalty (~2.2 GPa vs ~7.85 GPa cast)");
   const warning = warnings.length ? warnings.join(" · ") : undefined;
 
   if (Al >= 60 && Al <= 72 && Cu >= 10 && Cu <= 27 && Fe >= 10 && Fe <= 15 && mnOK) {
@@ -257,9 +288,11 @@ function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}):
     const proximity = Math.max(0, 1 - Math.abs(e_a - eaCenter) / eaHalfWidth);
     const bBonus  = b  >= 1 && b  <= 3 ? 5 : 0;
     const siBonus = si >  0 && si <= 2 ? 5 : 0;        // Si ≤ 2 at% boosts i-QC volume fraction
+    const agBonus = ag > 0 && ag <= 1.5 ? 3 : 0;       // Ag ~1 at% antibacterial, no destabilization
+    const znBonus = zn > 0 && zn <= 4   ? 3 : 0;       // Zn 0.5–4 at% retains QC+β
     const coolingBonus = (hints.coolingRate ?? 0) > 1e4 ? 5 : 0; // rapid solidification
     const crPenalty = cr >= 2 && cr < 8 ? -15 : 0;     // partial i→d transition
-    const confidence = Math.max(20, Math.min(95, 65 + proximity * 25 + bBonus + siBonus + coolingBonus + crPenalty));
+    const confidence = Math.max(20, Math.min(95, 65 + proximity * 25 + bBonus + siBonus + agBonus + znBonus + coolingBonus + crPenalty));
     const kind: PredKind = cr >= 2 && cr < 8 ? "APPROX" : "QC";
     return {
       kind,
@@ -271,6 +304,8 @@ function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}):
         `Inside Al-Cu-Fe(-Mn) i-QC field. e/a = ${e_a.toFixed(3)} vs Hume-Rothery 1.75–1.86.` +
         (b  >= 1 ? ` B = ${b} at% refines grains.` : "") +
         (si >= 1 ? ` Si = ${si} at% boosts i-QC fraction, cuts porosity.` : "") +
+        (ag >  0 ? ` Ag = ${ag} at% adds antibacterial Cu/Cu₂O synergy.` : "") +
+        (zn >  0 ? ` Zn = ${zn} at% tunes e/a; best Gram−ve DIZ at Zn=4.` : "") +
         (cr >= 2 && cr < 8 ? ` Cr = ${cr} at% triggers partial i→d coexistence.` : ""),
       warning,
     };

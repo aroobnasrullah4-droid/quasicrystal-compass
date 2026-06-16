@@ -17,7 +17,12 @@ interface RawRow {
   Ni?: number;
   B?: number;
   Si?: number;
+  Ag?: number;
+  Zn?: number;
   coolingRate?: number; // °C/s
+  millingHours?: number;
+  annealedAboveC?: number;
+  porous?: boolean;
   phase: string;
   HV: number | null;
   UTS: number | null;
@@ -38,6 +43,8 @@ interface RawRow {
   leaching_agent?: string;
   application?: string;
   active_sites?: string;
+  DIZ_mm?: number;
+  HV_GPa?: number;
 }
 
 // Literature dataset
@@ -104,6 +111,31 @@ const DATA: RawRow[] = [
 
   // Rapid solidification — high cooling rate favors i-QC, suppresses β
   { formula: "Al65Cu20Fe15 (melt-spun)", Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: null, UTS: null, source: "Melt-spinning", coolingRate: 1e6, note: ">1e4 °C/s suppresses β" },
+
+  // ── Batch 3: Ag/Zn antibacterial + processing-path rules ──
+  // Ag substitution (~1 at% replacing Cu) — antibacterial synergy with Cu/Cu₂O
+  { formula: "Al63Cu24Fe12Ag1",   Al: 63, Cr: 0, Cu: 24, Fe: 12, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Ag: 1,    phase: "i-QC", HV: null, UTS: null, source: "Ag-doped AlCuFe", DIZ_mm: 22, note: "Ag~1 at% — Cu/Cu₂O antibacterial synergy, stays i-QC" },
+
+  // Zn substitution (0.5–4 at% replacing Cu) — QC+β retained, DIZ tunable
+  { formula: "Al63Cu24.5Fe12Zn0.5", Al: 63, Cr: 0, Cu: 24.5, Fe: 12, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Zn: 0.5, phase: "i-QC + β", HV: null, UTS: null, source: "Zn-doped AlCuFe", DIZ_mm: 24, note: "Best Gram+ kill at Zn=0.5" },
+  { formula: "Al63Cu23Fe12Zn2",    Al: 63, Cr: 0, Cu: 23,   Fe: 12, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Zn: 2,   phase: "i-QC + β", HV: null, UTS: null, source: "Zn-doped AlCuFe", DIZ_mm: 25 },
+  { formula: "Al63Cu21Fe12Zn4",    Al: 63, Cr: 0, Cu: 21,   Fe: 12, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Zn: 4,   phase: "i-QC + β", HV: null, UTS: null, source: "Zn-doped AlCuFe", DIZ_mm: 26, note: "Best Gram− kill at Zn=4 (DIZ≈26 mm)" },
+
+  // Tcherdyntsev 2002 — MA-only vs MA + anneal reaction path
+  { formula: "Al65Cu20Fe15 (MA 20h, no anneal)", Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, millingHours: 20, annealedAboveC: 0,   phase: "β/B2 + unreacted", HV: null, UTS: null, source: "Tcherdyntsev 2002", note: "MA alone: bcc Al(Cu,Fe)+Al₂Cu → Al₇Cu₂Fe+D8.3; no QC" },
+  { formula: "Al65Cu20Fe15 (MA 20h + 400°C)",   Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, millingHours: 20, annealedAboveC: 400, phase: "β-Al(Cu,Fe)",      HV: null, UTS: null, source: "Tcherdyntsev 2002", note: "Anneal <500°C insufficient — β retained" },
+  { formula: "Al65Cu20Fe15 (MA 20h + 750°C)",   Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, millingHours: 20, annealedAboveC: 750, phase: "i-QC",             HV: null, UTS: null, source: "Tcherdyntsev 2002", note: "Single-phase i-QC after ≥700°C anneal" },
+
+  // Porosity hardness penalty: PM vs cast
+  { formula: "Al65Cu20Fe15 (PM, porous)", Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, porous: true, phase: "i-QC", HV: 220, HV_GPa: 2.2,  UTS: null, source: "PM thesis", note: "Porosity → ~2.2 GPa" },
+  { formula: "Al65Cu20Fe15 (cast/HIP)",   Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0,               phase: "i-QC", HV: 785, HV_GPa: 7.85, UTS: null, source: "Cast/HIP",  note: "Dense cast i-QC ~7.85 GPa" },
+
+  // NaOH leaching of Ag/Zn-doped i-QC — surface oxides as antibacterial sites
+  { formula: "Al60Cu24Fe14Ag1Zn1 (NaOH leached)", Al: 60, Cr: 0, Cu: 24, Fe: 14, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, Ag: 1, Zn: 1, phase: "i-QC (core) + Cu/Cu₂O/CuFe₂O₄", HV: null, UTS: null, source: "Leaching study", leaching_agent: "NaOH", active_sites: "Cu, Fe, Cu₂O, CuFe₂O₄, β", note: "QC core preserved; oxide surface = antibacterial sites" },
+
+  // Single-phase Al-Cu-Fe QC window (phase-diagram boundaries)
+  { formula: "Al58Cu28Fe14 (window edge)", Al: 58, Cr: 0, Cu: 28, Fe: 14, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: null, UTS: null, source: "Phase diagram", note: "Lower-Al edge of pure Al-Cu-Fe i-QC window" },
+  { formula: "Al70Cu20Fe10 (window edge)", Al: 70, Cr: 0, Cu: 20, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: null, UTS: null, source: "Phase diagram", note: "Upper-Al edge; beyond → ω-phase boundary" },
 ];
 
 // Map dataset phase to predictor categories (now includes DQC)
@@ -113,7 +145,9 @@ function reportedKind(r: RawRow): Kind {
   if (p === "d-qc" || p === "d-phase") return "DQC";
   // Coexistence / mixed → approximant bucket for scoring (predictor returns APPROX too)
   if (p.includes("d-qc") && p.includes("i-qc")) return "APPROX";
-  if (p.includes("b2") || p.includes("approx") || p.startsWith("am") || p === "β" || p.startsWith("β-")) return "APPROX";
+  // i-QC + β minor — QC remains dominant phase
+  if (p.includes("i-qc") && p.includes("β") && !p.includes("b2")) return "QC";
+  if (p.includes("b2") || p.includes("approx") || p.startsWith("am") || p === "β" || p.startsWith("β-") || p.startsWith("β/")) return "APPROX";
   if (p.includes("i-qc") || p.includes("qc")) return "QC";
   return "ORDINARY";
 }
@@ -123,7 +157,7 @@ function projectAlCuFeMn(r: RawRow): { comp: Comp; otherPct: number } {
   const sub = r.Al + r.Cu + r.Fe + r.Mn;
   const total =
     r.Al + r.Cr + r.Cu + r.Fe + r.Mn + r.V + r.Ti + r.Ce + r.Co +
-    (r.Ni ?? 0) + (r.B ?? 0) + (r.Si ?? 0);
+    (r.Ni ?? 0) + (r.B ?? 0) + (r.Si ?? 0) + (r.Ag ?? 0) + (r.Zn ?? 0);
   const otherPct = Math.max(0, total - sub);
   if (sub <= 0) return { comp: { Al: 0, Cu: 0, Fe: 0, Mn: 0 }, otherPct };
   const f = 100 / sub;
@@ -137,7 +171,7 @@ interface Props {
   loadExternalComp: (c: Comp, label: string) => void;
   predictFromExt: (
     c: Comp,
-    hints?: { co?: number; cr?: number; ni?: number; b?: number; si?: number; coolingRate?: number }
+    hints?: { co?: number; cr?: number; ni?: number; b?: number; si?: number; ag?: number; zn?: number; coolingRate?: number; millingHours?: number; annealedAboveC?: number; porous?: boolean }
   ) => {
     label: string;
     kind: string;
@@ -155,7 +189,8 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
     return DATA.map((r) => {
       const { comp, otherPct } = projectAlCuFeMn(r);
       const pred = predictFromExt(comp, {
-        co: r.Co, cr: r.Cr, ni: r.Ni, b: r.B, si: r.Si, coolingRate: r.coolingRate,
+        co: r.Co, cr: r.Cr, ni: r.Ni, b: r.B, si: r.Si, ag: r.Ag, zn: r.Zn,
+        coolingRate: r.coolingRate, millingHours: r.millingHours, annealedAboveC: r.annealedAboveC, porous: r.porous,
       });
       const expected = reportedKind(r);
       const match = pred.kind === expected;
@@ -226,7 +261,12 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
           <li>• <span className="text-foreground">Al-Cu-Fe-Si (replacing Al):</span> ≤2 at% Si raises i-QC fraction + hardness, cuts porosity; &gt;5 at% → approximant.</li>
           <li>• <span className="text-foreground">B + Si synergy:</span> small B suppresses θ-Al₂Cu and refines grains; Si+B together = peak hardness + toughness.</li>
           <li>• <span className="text-foreground">Cooling rate &gt;10⁴ °C/s:</span> favors i-QC, suppresses β. Microhardness: i-QC (ψ) &gt; λ-Al₁₃Fe₄ &gt; β ≈ τ ≈ η &gt; θ-Al₂Cu.</li>
-          <li>• <span className="text-foreground">NaOH dealloying:</span> i-QC core preserved; surface → Cu/Fe + oxide nanoparticles (catalytic).</li>
+          <li>• <span className="text-foreground">Mechanical alloying (Tcherdyntsev 2002):</span> MA alone → β/B2 + unreacted elements, NOT QC. Path: elements → bcc Al(Cu,Fe)+Al₂Cu → Al₇Cu₂Fe+D8.3(Al₄Cu₉) → i-QC. QC only appears after anneal &gt;500 °C; single-phase needs ~700–800 °C. Over-milling → β dominates.</li>
+          <li>• <span className="text-foreground">Ag (~1 at%, subs Cu):</span> antibacterial synergy with Cu/Cu₂O, stays icosahedral.</li>
+          <li>• <span className="text-foreground">Zn 0.5–4 at% (subs Cu):</span> tunes e/a, boosts DIZ; QC+β retained. Best Gram−ve kill at Zn=4 (DIZ≈26 mm); best Gram+ve at Zn=0.5.</li>
+          <li>• <span className="text-foreground">NaOH dealloying of i-Al-Cu-Fe(-Ag-Zn):</span> QC core preserved; surface → Cu, Fe, Cu₂O, CuFe₂O₄, β. Cu oxides = antibacterial active sites.</li>
+          <li>• <span className="text-foreground">Porosity penalty:</span> powder-metallurgy i-QC HV ≈ 2.2 GPa due to porosity; cast/HIP reaches ~7.85 GPa.</li>
+          <li>• <span className="text-foreground">Single-phase Al-Cu-Fe window:</span> between Al₅₈Cu₂₈Fe₁₄ and Al₇₀Cu₂₀Fe₁₀ (ω-phase boundary above Al₇₀). Use to validate any pure Al-Cu-Fe prediction.</li>
         </ul>
       </div>
 
@@ -270,6 +310,8 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
               <th className="px-2 py-2 text-right">Ni</th>
               <th className="px-2 py-2 text-right">B</th>
               <th className="px-2 py-2 text-right">Si</th>
+              <th className="px-2 py-2 text-right">Ag</th>
+              <th className="px-2 py-2 text-right">Zn</th>
               <th className="px-2 py-2 text-right">Other</th>
               <th className="px-2 py-2 text-left">Reported</th>
               <th className="px-2 py-2 text-left">Predicted</th>
@@ -296,6 +338,8 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
                 <td className="px-2 py-1.5 text-right">{r.Ni ?? "—"}</td>
                 <td className="px-2 py-1.5 text-right">{r.B ?? "—"}</td>
                 <td className="px-2 py-1.5 text-right">{r.Si ?? "—"}</td>
+                <td className="px-2 py-1.5 text-right">{r.Ag ?? "—"}</td>
+                <td className="px-2 py-1.5 text-right">{r.Zn ?? "—"}</td>
 
                 <td className="px-2 py-1.5 text-right text-amber-300">
                   {otherPct > 0 ? otherPct.toFixed(1) : "—"}
@@ -323,6 +367,11 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
                     r.wear_rate != null ? `wear ${(r.wear_rate * 1e4).toFixed(2)}e-4` : null,
                     r.friction != null ? `μ ${r.friction}` : null,
                     r.HV != null ? `HV ${r.HV}` : null,
+                    r.HV_GPa != null ? `HV ${r.HV_GPa} GPa` : null,
+                    r.DIZ_mm != null ? `DIZ ${r.DIZ_mm} mm` : null,
+                    r.millingHours != null ? `MA ${r.millingHours}h` : null,
+                    r.annealedAboveC != null ? `anneal ${r.annealedAboveC}°C` : null,
+                    r.porous ? "porous PM" : null,
                     r.E_GPa != null ? `E ${r.E_GPa} GPa` : null,
                     r.K_IC_MPa_m != null ? `K_IC ${r.K_IC_MPa_m} MPa·m^½` : null,
                     r.resistivity_uOhm_cm != null ? `ρ ${r.resistivity_uOhm_cm} μΩ·cm` : null,
