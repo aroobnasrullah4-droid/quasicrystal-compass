@@ -102,32 +102,54 @@ function simulate(comp: Comp, predKind: Props["predKind"], T: number, hours: num
     };
   }
 
-  // Above QC ceiling — QC decomposes
-  if (T >= 880) {
+  // > 900 °C — β dominates, QC disappears
+  if (T > 900) {
     return {
-      phase: "β-phase dominant — QC lost",
-      detail: `T = ${T} °C exceeds the i-QC stability ceiling (~880 °C). Quasicrystal decomposes back to high-T β-phase.`,
+      phase: "β dominates, QC disappears",
+      detail: `T = ${T} °C exceeds 900 °C — β-phase becomes dominant and quasicrystal is fully lost.`,
       color: "#EF4444",
       icon: "✗",
     };
   }
 
-  // Optimal window: 650–780 °C with sufficient time
-  if (T >= 650 && T <= 780 && hours >= 24) {
+  // 884 °C — DTA-confirmed phase transition point
+  if (T >= 880 && T <= 900) {
     return {
-      phase: "Pure icosahedral QC",
-      detail: `T = ${T} °C, t = ${hours} h — within equilibrium window. Single-phase i-QC expected.${
-        predKind === "APPROX" ? " Borderline composition — yield may be reduced." : ""
-      }`,
-      color: "#22C55E",
-      icon: "✓",
+      phase: "Phase transition point (DTA confirmed)",
+      detail: `T = ${T} °C — at the DTA-confirmed transition limit (~884 °C). QC begins decomposing into β-phase.`,
+      color: "#8B5CF6",
+      icon: "↔",
     };
   }
 
-  // Intermediate: 780–880 °C or short annealing — mixed
+  // 850 °C — QC + β mixed (transition zone)
+  if (T >= 850 && T < 880) {
+    return {
+      phase: "QC + β mixed (transition zone)",
+      detail: `T = ${T} °C — transition zone. QC and β-phase coexist; QC fraction decreases as temperature rises.`,
+      color: "#8B5CF6",
+      icon: "↔",
+    };
+  }
+
+  // 700–850 °C — QC forming (optimal: 700 °C, 72 h)
+  if (T >= 700 && T < 850 && hours >= 24) {
+    return {
+      phase: T === 700 && hours >= 72 ? "Pure icosahedral QC" : "QC forming",
+      detail: `T = ${T} °C, t = ${hours} h — QC forming window.${
+        T === 700 && hours >= 72
+          ? " Optimal condition reached — single-phase i-QC expected."
+          : " Partial or growing QC. Increase time or move toward 700 °C for pure QC."
+      }${predKind === "APPROX" ? " Borderline composition — yield may be reduced." : ""}`,
+      color: T === 700 && hours >= 72 ? "#22C55E" : "#8B5CF6",
+      icon: T === 700 && hours >= 72 ? "✓" : "↔",
+    };
+  }
+
+  // < 700 °C — β + QC mixed
   return {
-    phase: "β ↓ + i-QC ↑ (still mixed)",
-    detail: `T = ${T} °C, t = ${hours} h — partial transformation. β-phase fraction decreasing, i-QC growing. Increase time or lower T toward 700 °C for single-phase.`,
+    phase: "β + QC mixed",
+    detail: `T = ${T} °C, t = ${hours} h — below optimal window. β-phase coexists with icosahedral QC nuclei.`,
     color: "#F59E0B",
     icon: "◐",
   };
