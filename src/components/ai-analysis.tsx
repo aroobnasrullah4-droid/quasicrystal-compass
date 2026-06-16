@@ -106,9 +106,9 @@ Provide expert scientific assessment.`;
   const lastResponse = [...history].reverse().find((m) => m.role === "assistant")?.content;
 
   const followUps = [
-    { label: "What experiments to run?", text: "What experiments should I run next on this composition?" },
-    { label: "How does Mn content affect this?", text: "How does the Mn content of this composition affect QC formation?" },
-    { label: "Compare to Sir Fahad's system", text: "Compare this composition to Sir Fahad's Al63Cu18Fe12Mn7 system." },
+    { label: "Suggest experimental validation pathway", text: "Suggest an experimental validation pathway for this composition." },
+    { label: "Analyze Mn concentration effects", text: "Analyze how the Mn concentration of this composition affects QC formation." },
+    { label: "Compare with Ali et al. (2025) system", text: "Compare this composition to the Al63Cu18Fe12Mn7 system from Ali et al. (2025)." },
   ];
 
   return (
