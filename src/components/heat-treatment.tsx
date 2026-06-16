@@ -262,7 +262,7 @@ export function HeatTreatmentPanel({ comp, predKind }: Props) {
             Temperature: <strong style={{ color: "var(--foreground,#0f172a)" }}>{T} °C</strong>
             <input
               type="range"
-              min={400}
+              min={300}
               max={1000}
               step={10}
               value={T}
@@ -270,7 +270,7 @@ export function HeatTreatmentPanel({ comp, predKind }: Props) {
               style={{ width: "100%", marginTop: 4, accentColor: "#3B82F6" }}
             />
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, marginTop: 2 }}>
-              <span>400</span><span style={{ color: "#22C55E" }}>700 (opt)</span><span style={{ color: "#EF4444" }}>880+</span><span>1000</span>
+              <span>300</span><span style={{ color: "#22C55E" }}>700 ★</span><span style={{ color: "#8B5CF6" }}>884</span><span style={{ color: "#EF4444" }}>1000</span>
             </div>
           </label>
 
