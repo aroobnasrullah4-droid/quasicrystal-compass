@@ -221,9 +221,40 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
           <li>• <span className="text-foreground">Al-Cu-Fe-B:</span> optimal i-QC at ~4 h mechanical alloying. Over-milling (10 h) → β-Al(Cu,Fe). i-QC stable only ≤300 °C.</li>
           <li>• <span className="text-foreground">Al-Cu-Fe:</span> pure i-QC at 700 °C / 72 h anneal. Decomposes to β above ~884 °C (peritectic).</li>
           <li>• <span className="text-foreground">Al-Cu-Fe-Co:</span> Co 0–3% → i-QC; 5% → i+d coexist; &gt;8% → pure d-QC.</li>
-          <li>• <span className="text-foreground">NaOH dealloying:</span> i-QC core preserved; surface → Cu/Fe + oxide nanoparticles (catalytic active sites).</li>
+          <li>• <span className="text-foreground">Al-Cu-Fe-Cr (Wolf 2020):</span> ~3 at% Cr → i+d coexist; ≳8 at% Cr → pure d-QC.</li>
+          <li>• <span className="text-foreground">Al-Cu-Fe-Ni (Sukhova 2021):</span> i-QC tolerates ≤4 at% Ni; &gt;4 at% → B2 cubic; B2 major at Ni ≈ 9.</li>
+          <li>• <span className="text-foreground">Al-Cu-Fe-Si (replacing Al):</span> ≤2 at% Si raises i-QC fraction + hardness, cuts porosity; &gt;5 at% → approximant.</li>
+          <li>• <span className="text-foreground">B + Si synergy:</span> small B suppresses θ-Al₂Cu and refines grains; Si+B together = peak hardness + toughness.</li>
+          <li>• <span className="text-foreground">Cooling rate &gt;10⁴ °C/s:</span> favors i-QC, suppresses β. Microhardness: i-QC (ψ) &gt; λ-Al₁₃Fe₄ &gt; β ≈ τ ≈ η &gt; θ-Al₂Cu.</li>
+          <li>• <span className="text-foreground">NaOH dealloying:</span> i-QC core preserved; surface → Cu/Fe + oxide nanoparticles (catalytic).</li>
         </ul>
       </div>
+
+      {/* DUBOIS 2023 REFERENCE ANCHORS */}
+      <div className="mb-4 rounded-lg border border-sky-500/30 bg-sky-500/5 p-3 text-xs">
+        <div className="mb-2 text-[10px] uppercase tracking-wider text-sky-300">Physical-property anchors (Dubois 2023) — apply to any i-QC prediction</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-muted-foreground">
+          <div>• Thermal conductivity i-Al-Cu-Fe ≈ <span className="text-foreground data-mono">1 W/mK @ 300 K</span> (vs Al 240)</div>
+          <div>• Surface energy <span className="text-foreground data-mono">0.6–0.8 J/m²</span> (vs Al 1.2, Cu 1.8, Fe 2.2)</div>
+          <div>• Cookware/coating thermally stable to <span className="text-foreground data-mono">~300 °C</span></div>
+          <div>• Stability mechanism: <span className="text-foreground">Hume-Rothery pseudogap at E_F</span></div>
+          <div className="sm:col-span-2 italic">Marketed uses: maraging steel precipitates · Al-Cu-Fe-B polymer composites for 3D printing · anti-counterfeit labels.</div>
+        </div>
+      </div>
+
+      {/* OTHER KNOWN STABLE QC SYSTEMS — don't mis-flag */}
+      <div className="mb-4 rounded-lg border border-purple-500/30 bg-purple-500/5 p-3 text-xs">
+        <div className="mb-2 text-[10px] uppercase tracking-wider text-purple-300">Other known stable QC systems (out of current predictor scope — do not mis-flag)</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 text-muted-foreground data-mono">
+          <span>• Al-Cu-Li (i)</span>
+          <span>• Al-Pd-Mn (i)</span>
+          <span>• Al-Co-Ni (d)</span>
+          <span>• Al-Cu-Fe-Cr (d)</span>
+          <span>• Au-Ga-Dy (ferromagnetic i)</span>
+          <span>• Al-Zn-Mg (superconducting i)</span>
+        </div>
+      </div>
+
 
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
@@ -234,9 +265,11 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
               <th className="px-2 py-2 text-right">Cu</th>
               <th className="px-2 py-2 text-right">Fe</th>
               <th className="px-2 py-2 text-right">Mn</th>
+              <th className="px-2 py-2 text-right">Cr</th>
               <th className="px-2 py-2 text-right">Co</th>
               <th className="px-2 py-2 text-right">Ni</th>
               <th className="px-2 py-2 text-right">B</th>
+              <th className="px-2 py-2 text-right">Si</th>
               <th className="px-2 py-2 text-right">Other</th>
               <th className="px-2 py-2 text-left">Reported</th>
               <th className="px-2 py-2 text-left">Predicted</th>
@@ -258,9 +291,12 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
                 <td className="px-2 py-1.5 text-right">{r.Cu || "—"}</td>
                 <td className="px-2 py-1.5 text-right">{r.Fe || "—"}</td>
                 <td className="px-2 py-1.5 text-right">{r.Mn || "—"}</td>
+                <td className="px-2 py-1.5 text-right">{r.Cr || "—"}</td>
                 <td className="px-2 py-1.5 text-right">{r.Co || "—"}</td>
                 <td className="px-2 py-1.5 text-right">{r.Ni ?? "—"}</td>
                 <td className="px-2 py-1.5 text-right">{r.B ?? "—"}</td>
+                <td className="px-2 py-1.5 text-right">{r.Si ?? "—"}</td>
+
                 <td className="px-2 py-1.5 text-right text-amber-300">
                   {otherPct > 0 ? otherPct.toFixed(1) : "—"}
                 </td>
