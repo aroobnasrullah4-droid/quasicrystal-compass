@@ -214,6 +214,14 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
                     r.i_phase_pct != null ? `i-φ ${r.i_phase_pct}%` : null,
                     r.wear_rate != null ? `wear ${(r.wear_rate * 1e4).toFixed(2)}e-4` : null,
                     r.friction != null ? `μ ${r.friction}` : null,
+                    r.E_GPa != null ? `E ${r.E_GPa} GPa` : null,
+                    r.K_IC_MPa_m != null ? `K_IC ${r.K_IC_MPa_m} MPa·m^½` : null,
+                    r.resistivity_uOhm_cm != null ? `ρ ${r.resistivity_uOhm_cm} μΩ·cm` : null,
+                    r.grain_softening_nm != null ? `softening < ${r.grain_softening_nm} nm` : null,
+                    r.leaching_agent ? `leach: ${r.leaching_agent}` : null,
+                    r.application ? `app: ${r.application}` : null,
+                    r.active_sites ? `sites: ${r.active_sites}` : null,
+                    r.note ?? null,
                   ].filter(Boolean).join(" · ") || "—"}
                 </td>
                 <td className="px-2 py-1.5 text-right">
