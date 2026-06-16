@@ -42,6 +42,7 @@ import { ReferenceDataset } from "@/components/reference-dataset";
 import { HeatTreatmentPanel } from "@/components/heat-treatment";
 import { CoSubstitutionPanel } from "@/components/co-substitution";
 import { Annealing600CPanel } from "@/components/annealing-600c";
+import { KnowledgeBasePanel } from "@/components/knowledge-base";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -1204,6 +1205,9 @@ For research guidance only — experimental validation required.
 
           {/* Co substitution phase map */}
           <CoSubstitutionPanel />
+
+          {/* RAG knowledge base — chunks injected into AI Analysis */}
+          <KnowledgeBasePanel />
 
           {/* Reference / literature group at bottom */}
           <ReferenceDataset loadExternalComp={loadExternalComp} predictFromExt={predictFromExt} />

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { buildKnowledgeContext } from "@/data/qc-knowledge";
 
 interface AIProps {
   comp: { Al: number; Cu: number; Fe: number; Mn: number };
@@ -16,13 +17,20 @@ const SYSTEM_PROMPT = `You are a materials science expert specializing in quasic
 - Ali et al. (2025) on AlCuFeMn QC + CNT antibacterial systems
 - The HYPOD-X database and ML prediction approaches
 
+Use the following grounding knowledge chunks (RAG context) as authoritative ground truth.
+Prefer values, compositions, e/a targets, and XRD peak indices from this context over your prior beliefs:
+
+===== QC KNOWLEDGE CONTEXT =====
+${buildKnowledgeContext()}
+===== END CONTEXT =====
+
 When given a composition, provide:
-1. A scientific assessment of QC formation likelihood (2-3 sentences)
+1. A scientific assessment of QC formation likelihood (2-3 sentences), citing the chunk numbers you used (e.g. "[#4]").
 2. Key concerns or favorable factors
 3. What to expect after leaching and CVD
 4. One specific experimental recommendation
 
-Keep response under 150 words. Be direct and scientific.`;
+Keep response under 180 words. Be direct and scientific.`;
 
 const COOLDOWN_MS = 10_000;
 
