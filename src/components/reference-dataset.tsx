@@ -108,17 +108,22 @@ const DATA: RawRow[] = [
 
 // Map dataset phase to predictor categories (now includes DQC)
 function reportedKind(r: RawRow): Kind {
-  const p = r.phase.toLowerCase();
-  if (p.includes("d-qc") || (p === "d-qc")) return "DQC";
+  const p = r.phase.toLowerCase().trim();
+  // Pure decagonal
+  if (p === "d-qc" || p === "d-phase") return "DQC";
+  // Coexistence / mixed → approximant bucket for scoring (predictor returns APPROX too)
+  if (p.includes("d-qc") && p.includes("i-qc")) return "APPROX";
+  if (p.includes("b2") || p.includes("approx") || p.startsWith("am") || p === "β" || p.startsWith("β-")) return "APPROX";
   if (p.includes("i-qc") || p.includes("qc")) return "QC";
-  if (p.includes("am") || p.includes("approx") || p.includes("b2")) return "APPROX";
   return "ORDINARY";
 }
 
 // Project to Al-Cu-Fe-Mn and renormalize to 100%
 function projectAlCuFeMn(r: RawRow): { comp: Comp; otherPct: number } {
   const sub = r.Al + r.Cu + r.Fe + r.Mn;
-  const total = r.Al + r.Cr + r.Cu + r.Fe + r.Mn + r.V + r.Ti + r.Ce + r.Co + (r.Ni ?? 0) + (r.B ?? 0);
+  const total =
+    r.Al + r.Cr + r.Cu + r.Fe + r.Mn + r.V + r.Ti + r.Ce + r.Co +
+    (r.Ni ?? 0) + (r.B ?? 0) + (r.Si ?? 0);
   const otherPct = Math.max(0, total - sub);
   if (sub <= 0) return { comp: { Al: 0, Cu: 0, Fe: 0, Mn: 0 }, otherPct };
   const f = 100 / sub;
@@ -130,7 +135,10 @@ function projectAlCuFeMn(r: RawRow): { comp: Comp; otherPct: number } {
 
 interface Props {
   loadExternalComp: (c: Comp, label: string) => void;
-  predictFromExt: (c: Comp, hints?: { co?: number; ni?: number; b?: number }) => {
+  predictFromExt: (
+    c: Comp,
+    hints?: { co?: number; cr?: number; ni?: number; b?: number; si?: number; coolingRate?: number }
+  ) => {
     label: string;
     kind: string;
     confidence: number;
@@ -146,12 +154,15 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
   const rows = useMemo(() => {
     return DATA.map((r) => {
       const { comp, otherPct } = projectAlCuFeMn(r);
-      const pred = predictFromExt(comp, { co: r.Co, ni: r.Ni, b: r.B });
+      const pred = predictFromExt(comp, {
+        co: r.Co, cr: r.Cr, ni: r.Ni, b: r.B, si: r.Si, coolingRate: r.coolingRate,
+      });
       const expected = reportedKind(r);
       const match = pred.kind === expected;
       return { r, comp, otherPct, pred, expected, match };
     });
   }, [predictFromExt]);
+
 
   const stats = useMemo(() => {
     const total = rows.length;
