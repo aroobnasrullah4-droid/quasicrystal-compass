@@ -144,6 +144,7 @@ export function Annealing600CPanel() {
                 <MetricRow label="i-phase" value={`${d.iPhase.toFixed(2)}%`} />
                 <MetricRow label="Grain radius" value={`${d.grainRadius.toFixed(2)} μm`} />
                 <MetricRow label="Hardness" value={`${d.hv} HV`} />
+                <MetricRow label="Friction μ" value={d.friction.toFixed(3)} />
                 <MetricRow label="Wear rate" value={`${d.wearRate.toFixed(2)}×10⁻⁴ mm³/Nm`} />
               </div>
             </div>
