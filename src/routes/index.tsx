@@ -1199,6 +1199,9 @@ For research guidance only — experimental validation required.
           {/* Heat treatment / phase evolution */}
           <HeatTreatmentPanel comp={comp} predKind={pred.kind} />
 
+          {/* 600°C isothermal annealing data */}
+          <Annealing600CPanel />
+
           {/* Co substitution phase map */}
           <CoSubstitutionPanel />
 
