@@ -201,6 +201,52 @@ export function Annealing600CPanel() {
           ))}
         </div>
       </div>
+
+      {/* Optimal concentration banner */}
+      <div
+        style={{
+          marginTop: 14,
+          borderRadius: 10,
+          padding: "10px 12px",
+          background: "rgba(34,197,94,0.10)",
+          border: "1px solid #22C55E55",
+          display: "flex",
+          gap: 12,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <span style={{ fontSize: 18, color: "#22C55E", fontWeight: 700 }}>★</span>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#22C55E" }}>
+            Optimal concentration: {OPTIMAL_IPHASE}% i-phase (minimum wear rate)
+          </div>
+          <div style={{ fontSize: 10, color: "var(--muted-foreground,#64748b)", marginTop: 2 }}>
+            Extrapolated optimum beyond 36 h — wear rate minimized at peak i-phase fraction.
+          </div>
+        </div>
+      </div>
+
+      {/* Hardness prediction formula */}
+      <div
+        style={{
+          marginTop: 10,
+          borderRadius: 10,
+          padding: "10px 12px",
+          background: "rgba(59,130,246,0.08)",
+          border: "1px solid #3B82F655",
+        }}
+      >
+        <div style={{ fontSize: 11, fontWeight: 700, color: "#3B82F6", marginBottom: 4 }}>
+          Hardness prediction (Lee et al. 2020)
+        </div>
+        <div style={{ fontSize: 12, fontFamily: "ui-monospace,monospace", color: "var(--foreground,#0f172a)" }}>
+          HV = −0.01034·X² + 3.821·X + 521.6
+        </div>
+        <div style={{ fontSize: 10, color: "var(--muted-foreground,#64748b)", marginTop: 4 }}>
+          where X = i-phase fraction (%). At X = {OPTIMAL_IPHASE}% → HV ≈ {predictHV(OPTIMAL_IPHASE).toFixed(1)}.
+        </div>
+      </div>
     </div>
   );
 }
