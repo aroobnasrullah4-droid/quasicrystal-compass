@@ -664,10 +664,10 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
                   Export CSV
                 </button>
                 <button
-                  onClick={copyColab}
+                  onClick={exportJSON}
                   className="rounded border border-border px-2 py-1 text-xs hover:bg-muted"
                 >
-                  Copy to Colab
+                  Export JSON
                 </button>
                 <button
                   onClick={() => setLog([])}
