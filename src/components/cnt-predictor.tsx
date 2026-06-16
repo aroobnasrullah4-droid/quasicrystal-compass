@@ -527,13 +527,13 @@ export function CNTPredictor({ comp }: { comp: Comp }) {
                   <div className="h-1.5 w-20 rounded bg-muted">
                     <div className="h-full rounded bg-slate-400" style={{ width: "53%" }} />
                   </div>
-                  <span>Un-leached QC ref: ~8 mm</span>
+                  <span>Un-leached QC reference: ~8 mm</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-20 rounded bg-muted">
                     <div className="h-full rounded bg-emerald-500" style={{ width: "100%" }} />
                   </div>
-                  <span>Leached QC+CNT (Ali 2025): ~15 mm</span>
+                  <span>Reference (Ali et al., 2025): ~15 mm</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="h-1.5 w-20 rounded bg-muted">
