@@ -1085,10 +1085,28 @@ For research guidance only — experimental validation required.
                   <option value="ORDINARY">Non-QC only</option>
                 </select>
                 <button
-                  onClick={copyColab}
+                  onClick={() => {
+                    const arr = history.map((r) => ({
+                      Al: +r.comp.Al.toFixed(2),
+                      Cu: +r.comp.Cu.toFixed(2),
+                      Fe: +r.comp.Fe.toFixed(2),
+                      Mn: +r.comp.Mn.toFixed(2),
+                      e_a: +r.e_a.toFixed(3),
+                      phase: r.pred.kind,
+                      confidence: +r.pred.confidence.toFixed(1),
+                      source: r.source,
+                    }));
+                    const blob = new Blob([JSON.stringify(arr, null, 2)], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `qc_session_${Date.now()}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  }}
                   className="rounded-md border border-border bg-secondary px-3 py-1.5 text-xs hover:bg-secondary/70"
                 >
-                  🐍 Copy Colab
+                  Export JSON
                 </button>
                 <button
                   onClick={exportCSV}
