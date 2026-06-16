@@ -17,6 +17,13 @@ interface RawRow {
   HV: number | null;
   UTS: number | null;
   source: string;
+  temp_C?: number;
+  time_h?: number;
+  anneal_temp?: number;
+  anneal_h?: number;
+  i_phase_pct?: number;
+  wear_rate?: number;
+  friction?: number;
 }
 
 // Literature dataset (Inoue 2003; Shaitura & Sukhanov 2007)
