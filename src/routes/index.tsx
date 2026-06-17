@@ -202,6 +202,18 @@ function predict(c: Comp, e_a: number, total: number, hints: PredictHints = {}):
   const ag = hints.ag ?? 0;
   const zn = hints.zn ?? 0;
 
+  // === Peritectic decomposition: anneal > 884°C → β-dominant, QC lost ===
+  if (hints.annealedAboveC != null && hints.annealedAboveC > 884) {
+    return {
+      kind: "APPROX",
+      label: "β-Al(Cu,Fe) (>884°C peritectic)",
+      confidence: 70,
+      color: "#F59E0B",
+      icon: "◈",
+      reasoning: `Anneal ${hints.annealedAboveC}°C exceeds Al-Cu-Fe peritectic (~884°C) → β-dominant, QC decomposes.`,
+    };
+  }
+
   // === Mechanical alloying without sufficient anneal → β/B2, NOT QC ===
   // Tcherdyntsev 2002: MA alone gives β-Al(Cu,Fe) + B2 + unreacted elements.
   // Single-phase i-QC needs post-MA anneal at ≥700°C; <500°C keeps β.

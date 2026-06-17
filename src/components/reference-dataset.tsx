@@ -182,19 +182,48 @@ interface Props {
   };
 }
 
+type ScopeReason =
+  | "decagonal class"
+  | "Al-rich window (Al > 72)"
+  | "Cu > 27 (out of i-QC band)"
+  | "Cr/Co/Ni base (phase-determining)"
+  | "V/Ti/Ce stabilizer"
+  | "Al/Fe out of i-QC window";
+
+function classifyScope(r: RawRow, expected: Kind): { inScope: boolean; reason?: ScopeReason } {
+  if (expected === "DQC") return { inScope: false, reason: "decagonal class" };
+  if (r.V > 0 || r.Ti > 0 || r.Ce > 0) return { inScope: false, reason: "V/Ti/Ce stabilizer" };
+  if (r.Cr > 0 || r.Co > 0 || (r.Ni ?? 0) > 0) return { inScope: false, reason: "Cr/Co/Ni base (phase-determining)" };
+  if (r.Al > 72) return { inScope: false, reason: "Al-rich window (Al > 72)" };
+  if (r.Cu > 27) return { inScope: false, reason: "Cu > 27 (out of i-QC band)" };
+  if (r.Al < 58 || r.Fe < 10 || r.Fe > 15 || r.Cu < 10) {
+    return { inScope: false, reason: "Al/Fe out of i-QC window" };
+  }
+  return { inScope: true };
+}
+
 export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
   const [showOnlyMatch, setShowOnlyMatch] = useState<"all" | "match" | "miss">("all");
+  const [scopeFilter, setScopeFilter] = useState<"all" | "in" | "out">("all");
 
   const rows = useMemo(() => {
     return DATA.map((r) => {
       const { comp, otherPct } = projectAlCuFeMn(r);
+      // Wire legacy process fields → hint shape the predictor reads
+      const milledByName = /\bmilled\b|\bMA\b/i.test(r.formula);
+      const millingHours =
+        r.millingHours ?? r.mill_h ?? (milledByName && r.anneal_temp == null && r.temp_C == null ? 8 : undefined);
+      // anneal_temp (Lee), temp_C (Rosas annealing series) both indicate heat-treatment temp
+      const annealedAboveC =
+        r.annealedAboveC ?? r.anneal_temp ?? r.temp_C ?? undefined;
       const pred = predictFromExt(comp, {
         co: r.Co, cr: r.Cr, ni: r.Ni, b: r.B, si: r.Si, ag: r.Ag, zn: r.Zn,
-        coolingRate: r.coolingRate, millingHours: r.millingHours, annealedAboveC: r.annealedAboveC, porous: r.porous,
+        coolingRate: r.coolingRate, millingHours, annealedAboveC, porous: r.porous,
       });
       const expected = reportedKind(r);
       const match = pred.kind === expected;
-      return { r, comp, otherPct, pred, expected, match };
+      const scope = classifyScope(r, expected);
+      return { r, comp, otherPct, pred, expected, match, scope };
     });
   }, [predictFromExt]);
 
@@ -202,51 +231,115 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
   const stats = useMemo(() => {
     const total = rows.length;
     const matches = rows.filter((x) => x.match).length;
-    return { total, matches, pct: total ? (matches / total) * 100 : 0 };
+    const inScope = rows.filter((x) => x.scope.inScope);
+    const inScopeMatches = inScope.filter((x) => x.match).length;
+    const outOfScope = rows.filter((x) => !x.scope.inScope);
+    // Group out-of-scope by reason
+    const gap: Record<string, number> = {};
+    outOfScope.forEach((x) => {
+      const k = x.scope.reason ?? "other";
+      gap[k] = (gap[k] ?? 0) + 1;
+    });
+    return {
+      total,
+      matches,
+      pct: total ? (matches / total) * 100 : 0,
+      inScopeTotal: inScope.length,
+      inScopeMatches,
+      inScopePct: inScope.length ? (inScopeMatches / inScope.length) * 100 : 0,
+      outOfScopeTotal: outOfScope.length,
+      gap,
+    };
   }, [rows]);
 
-  const filtered = rows.filter((x) =>
-    showOnlyMatch === "all" ? true : showOnlyMatch === "match" ? x.match : !x.match
-  );
+  const filtered = rows.filter((x) => {
+    if (showOnlyMatch === "match" && !x.match) return false;
+    if (showOnlyMatch === "miss" && x.match) return false;
+    if (scopeFilter === "in" && !x.scope.inScope) return false;
+    if (scopeFilter === "out" && x.scope.inScope) return false;
+    return true;
+  });
 
   const kindColor = (k: string) =>
     k === "QC" ? "#22C55E" : k === "DQC" ? "#a855f7" : k === "APPROX" ? "#F59E0B" : "#EF4444";
 
-  const scoreColor = stats.pct >= 75 ? "#22C55E" : stats.pct >= 50 ? "#F59E0B" : "#EF4444";
+  const scoreColor = stats.inScopePct >= 75 ? "#22C55E" : stats.inScopePct >= 50 ? "#F59E0B" : "#EF4444";
 
   return (
     <section className="lg:col-span-12 rounded-xl border border-border bg-card p-5">
       <div className="mb-1 text-xs uppercase tracking-wider text-primary">Reference Dataset & Calibration</div>
       <h2 className="text-lg font-semibold">📚 Predictor Accuracy — Experimental Ground Truth</h2>
 
-      {/* PROMINENT ACCURACY BADGE */}
-      <div
-        className="my-3 rounded-lg border p-4 flex flex-wrap items-center justify-between gap-3"
-        style={{ borderColor: scoreColor + "66", background: scoreColor + "12" }}
-      >
-        <div>
+      {/* PROMINENT ACCURACY BADGES — in-scope (headline) + overall */}
+      <div className="my-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div
+          className="rounded-lg border p-4"
+          style={{ borderColor: scoreColor + "66", background: scoreColor + "12" }}
+        >
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Calibration accuracy across {stats.total} experimental records
+            In-scope accuracy — Al-Cu-Fe-(Mn/Ag/Zn/B/Si) jurisdiction
           </div>
           <div className="data-mono text-3xl font-bold" style={{ color: scoreColor }}>
+            {stats.inScopePct.toFixed(1)}%
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {stats.inScopeMatches} / {stats.inScopeTotal} hits · Al 58–72, Cu 10–27, Fe 10–15, no Cr/Co/Ni/V/Ti/Ce
+          </div>
+        </div>
+        <div className="rounded-lg border border-border bg-secondary/30 p-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Overall accuracy <span className="italic">(includes out-of-scope stress tests)</span>
+          </div>
+          <div className="data-mono text-3xl font-bold text-foreground">
             {stats.pct.toFixed(1)}%
           </div>
           <div className="text-xs text-muted-foreground">
-            {stats.matches} hits · {stats.total - stats.matches} misses · phases: i-QC, d-QC, approximant, ordinary
+            {stats.matches} / {stats.total} hits · {stats.outOfScopeTotal} rows are out-of-scope stress tests
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <select
-            value={showOnlyMatch}
-            onChange={(e) => setShowOnlyMatch(e.target.value as "all" | "match" | "miss")}
-            className="rounded-md border border-border bg-secondary px-2 py-1 text-xs"
-          >
-            <option value="all">All rows</option>
-            <option value="match">Hits only</option>
-            <option value="miss">Misses only</option>
-          </select>
-          <span className="text-[10px] text-muted-foreground">Score updates live as predictor rules change</span>
+      </div>
+
+      {/* COVERAGE GAP — roadmap for ML extension */}
+      {stats.outOfScopeTotal > 0 && (
+        <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-amber-300">
+            Coverage gap ({stats.outOfScopeTotal} rows) — roadmap for the Random-Forest extension
+          </div>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-muted-foreground">
+            {Object.entries(stats.gap)
+              .sort((a, b) => b[1] - a[1])
+              .map(([reason, n]) => (
+                <li key={reason}>
+                  • <span className="text-foreground">{reason}</span>{" "}
+                  <span className="data-mono">×{n}</span>
+                </li>
+              ))}
+          </ul>
         </div>
+      )}
+
+      {/* FILTERS */}
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Filter:</span>
+        <select
+          value={scopeFilter}
+          onChange={(e) => setScopeFilter(e.target.value as "all" | "in" | "out")}
+          className="rounded-md border border-border bg-secondary px-2 py-1"
+        >
+          <option value="all">All scopes</option>
+          <option value="in">In-scope only</option>
+          <option value="out">Out-of-scope only</option>
+        </select>
+        <select
+          value={showOnlyMatch}
+          onChange={(e) => setShowOnlyMatch(e.target.value as "all" | "match" | "miss")}
+          className="rounded-md border border-border bg-secondary px-2 py-1"
+        >
+          <option value="all">Hits + misses</option>
+          <option value="match">Hits only</option>
+          <option value="miss">Misses only</option>
+        </select>
+        <span className="text-[10px] text-muted-foreground">Scores update live as predictor rules change</span>
       </div>
 
       {/* PROCESS → PHASE RULES */}
@@ -316,17 +409,18 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
               <th className="px-2 py-2 text-left">Reported</th>
               <th className="px-2 py-2 text-left">Predicted</th>
               <th className="px-2 py-2 text-center">Hit/Miss</th>
+              <th className="px-2 py-2 text-center">Scope</th>
               <th className="px-2 py-2 text-left">Source</th>
               <th className="px-2 py-2 text-left">Conditions / Notes</th>
               <th className="px-2 py-2"></th>
             </tr>
           </thead>
           <tbody className="data-mono">
-            {filtered.map(({ r, comp, otherPct, pred, expected, match }) => (
+            {filtered.map(({ r, comp, otherPct, pred, expected, match, scope }) => (
               <tr
                 key={r.formula}
                 className="border-b border-border/50 hover:bg-secondary/30"
-                style={{ borderLeft: `3px solid ${kindColor(expected)}` }}
+                style={{ borderLeft: `3px solid ${kindColor(expected)}`, opacity: scope.inScope ? 1 : 0.78 }}
               >
                 <td className="px-2 py-1.5 font-sans">{r.formula}</td>
                 <td className="px-2 py-1.5 text-right">{r.Al}</td>
@@ -355,6 +449,20 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
                 </td>
                 <td className="px-2 py-1.5 text-center font-bold" style={{ color: match ? "#22C55E" : "#EF4444" }}>
                   {match ? "✓ HIT" : "✗ MISS"}
+                </td>
+                <td className="px-2 py-1.5 text-center">
+                  {scope.inScope ? (
+                    <span className="rounded border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+                      IN
+                    </span>
+                  ) : (
+                    <span
+                      className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300"
+                      title={scope.reason}
+                    >
+                      OUT
+                    </span>
+                  )}
                 </td>
                 <td className="px-2 py-1.5 font-sans text-muted-foreground">{r.source}</td>
                 <td className="px-2 py-1.5 font-sans text-[10px] text-muted-foreground">
