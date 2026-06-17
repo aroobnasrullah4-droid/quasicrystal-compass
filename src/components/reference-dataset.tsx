@@ -182,19 +182,48 @@ interface Props {
   };
 }
 
+type ScopeReason =
+  | "decagonal class"
+  | "Al-rich window (Al > 72)"
+  | "Cu > 27 (out of i-QC band)"
+  | "Cr/Co/Ni base (phase-determining)"
+  | "V/Ti/Ce stabilizer"
+  | "Al/Fe out of i-QC window";
+
+function classifyScope(r: RawRow, expected: Kind): { inScope: boolean; reason?: ScopeReason } {
+  if (expected === "DQC") return { inScope: false, reason: "decagonal class" };
+  if (r.V > 0 || r.Ti > 0 || r.Ce > 0) return { inScope: false, reason: "V/Ti/Ce stabilizer" };
+  if (r.Cr > 0 || r.Co > 0 || (r.Ni ?? 0) > 0) return { inScope: false, reason: "Cr/Co/Ni base (phase-determining)" };
+  if (r.Al > 72) return { inScope: false, reason: "Al-rich window (Al > 72)" };
+  if (r.Cu > 27) return { inScope: false, reason: "Cu > 27 (out of i-QC band)" };
+  if (r.Al < 58 || r.Fe < 10 || r.Fe > 15 || r.Cu < 10) {
+    return { inScope: false, reason: "Al/Fe out of i-QC window" };
+  }
+  return { inScope: true };
+}
+
 export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
   const [showOnlyMatch, setShowOnlyMatch] = useState<"all" | "match" | "miss">("all");
+  const [scopeFilter, setScopeFilter] = useState<"all" | "in" | "out">("all");
 
   const rows = useMemo(() => {
     return DATA.map((r) => {
       const { comp, otherPct } = projectAlCuFeMn(r);
+      // Wire legacy process fields → hint shape the predictor reads
+      const milledByName = /\bmilled\b|\bMA\b/i.test(r.formula);
+      const millingHours =
+        r.millingHours ?? r.mill_h ?? (milledByName && r.anneal_temp == null && r.temp_C == null ? 8 : undefined);
+      // anneal_temp (Lee), temp_C (Rosas annealing series) both indicate heat-treatment temp
+      const annealedAboveC =
+        r.annealedAboveC ?? r.anneal_temp ?? r.temp_C ?? undefined;
       const pred = predictFromExt(comp, {
         co: r.Co, cr: r.Cr, ni: r.Ni, b: r.B, si: r.Si, ag: r.Ag, zn: r.Zn,
-        coolingRate: r.coolingRate, millingHours: r.millingHours, annealedAboveC: r.annealedAboveC, porous: r.porous,
+        coolingRate: r.coolingRate, millingHours, annealedAboveC, porous: r.porous,
       });
       const expected = reportedKind(r);
       const match = pred.kind === expected;
-      return { r, comp, otherPct, pred, expected, match };
+      const scope = classifyScope(r, expected);
+      return { r, comp, otherPct, pred, expected, match, scope };
     });
   }, [predictFromExt]);
 
@@ -202,17 +231,39 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
   const stats = useMemo(() => {
     const total = rows.length;
     const matches = rows.filter((x) => x.match).length;
-    return { total, matches, pct: total ? (matches / total) * 100 : 0 };
+    const inScope = rows.filter((x) => x.scope.inScope);
+    const inScopeMatches = inScope.filter((x) => x.match).length;
+    const outOfScope = rows.filter((x) => !x.scope.inScope);
+    // Group out-of-scope by reason
+    const gap: Record<string, number> = {};
+    outOfScope.forEach((x) => {
+      const k = x.scope.reason ?? "other";
+      gap[k] = (gap[k] ?? 0) + 1;
+    });
+    return {
+      total,
+      matches,
+      pct: total ? (matches / total) * 100 : 0,
+      inScopeTotal: inScope.length,
+      inScopeMatches,
+      inScopePct: inScope.length ? (inScopeMatches / inScope.length) * 100 : 0,
+      outOfScopeTotal: outOfScope.length,
+      gap,
+    };
   }, [rows]);
 
-  const filtered = rows.filter((x) =>
-    showOnlyMatch === "all" ? true : showOnlyMatch === "match" ? x.match : !x.match
-  );
+  const filtered = rows.filter((x) => {
+    if (showOnlyMatch === "match" && !x.match) return false;
+    if (showOnlyMatch === "miss" && x.match) return false;
+    if (scopeFilter === "in" && !x.scope.inScope) return false;
+    if (scopeFilter === "out" && x.scope.inScope) return false;
+    return true;
+  });
 
   const kindColor = (k: string) =>
     k === "QC" ? "#22C55E" : k === "DQC" ? "#a855f7" : k === "APPROX" ? "#F59E0B" : "#EF4444";
 
-  const scoreColor = stats.pct >= 75 ? "#22C55E" : stats.pct >= 50 ? "#F59E0B" : "#EF4444";
+  const scoreColor = stats.inScopePct >= 75 ? "#22C55E" : stats.inScopePct >= 50 ? "#F59E0B" : "#EF4444";
 
   return (
     <section className="lg:col-span-12 rounded-xl border border-border bg-card p-5">
