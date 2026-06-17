@@ -416,11 +416,11 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
             </tr>
           </thead>
           <tbody className="data-mono">
-            {filtered.map(({ r, comp, otherPct, pred, expected, match }) => (
+            {filtered.map(({ r, comp, otherPct, pred, expected, match, scope }) => (
               <tr
                 key={r.formula}
                 className="border-b border-border/50 hover:bg-secondary/30"
-                style={{ borderLeft: `3px solid ${kindColor(expected)}` }}
+                style={{ borderLeft: `3px solid ${kindColor(expected)}`, opacity: scope.inScope ? 1 : 0.78 }}
               >
                 <td className="px-2 py-1.5 font-sans">{r.formula}</td>
                 <td className="px-2 py-1.5 text-right">{r.Al}</td>
@@ -449,6 +449,20 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
                 </td>
                 <td className="px-2 py-1.5 text-center font-bold" style={{ color: match ? "#22C55E" : "#EF4444" }}>
                   {match ? "✓ HIT" : "✗ MISS"}
+                </td>
+                <td className="px-2 py-1.5 text-center">
+                  {scope.inScope ? (
+                    <span className="rounded border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-300">
+                      IN
+                    </span>
+                  ) : (
+                    <span
+                      className="rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-amber-300"
+                      title={scope.reason}
+                    >
+                      OUT
+                    </span>
+                  )}
                 </td>
                 <td className="px-2 py-1.5 font-sans text-muted-foreground">{r.source}</td>
                 <td className="px-2 py-1.5 font-sans text-[10px] text-muted-foreground">
