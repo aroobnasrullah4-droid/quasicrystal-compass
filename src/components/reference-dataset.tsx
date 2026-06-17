@@ -409,6 +409,7 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
               <th className="px-2 py-2 text-left">Reported</th>
               <th className="px-2 py-2 text-left">Predicted</th>
               <th className="px-2 py-2 text-center">Hit/Miss</th>
+              <th className="px-2 py-2 text-center">Scope</th>
               <th className="px-2 py-2 text-left">Source</th>
               <th className="px-2 py-2 text-left">Conditions / Notes</th>
               <th className="px-2 py-2"></th>
