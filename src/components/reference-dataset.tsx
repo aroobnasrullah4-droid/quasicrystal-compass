@@ -270,34 +270,76 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
       <div className="mb-1 text-xs uppercase tracking-wider text-primary">Reference Dataset & Calibration</div>
       <h2 className="text-lg font-semibold">📚 Predictor Accuracy — Experimental Ground Truth</h2>
 
-      {/* PROMINENT ACCURACY BADGE */}
-      <div
-        className="my-3 rounded-lg border p-4 flex flex-wrap items-center justify-between gap-3"
-        style={{ borderColor: scoreColor + "66", background: scoreColor + "12" }}
-      >
-        <div>
+      {/* PROMINENT ACCURACY BADGES — in-scope (headline) + overall */}
+      <div className="my-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div
+          className="rounded-lg border p-4"
+          style={{ borderColor: scoreColor + "66", background: scoreColor + "12" }}
+        >
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Calibration accuracy across {stats.total} experimental records
+            In-scope accuracy — Al-Cu-Fe-(Mn/Ag/Zn/B/Si) jurisdiction
           </div>
           <div className="data-mono text-3xl font-bold" style={{ color: scoreColor }}>
+            {stats.inScopePct.toFixed(1)}%
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {stats.inScopeMatches} / {stats.inScopeTotal} hits · Al 58–72, Cu 10–27, Fe 10–15, no Cr/Co/Ni/V/Ti/Ce
+          </div>
+        </div>
+        <div className="rounded-lg border border-border bg-secondary/30 p-4">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+            Overall accuracy <span className="italic">(includes out-of-scope stress tests)</span>
+          </div>
+          <div className="data-mono text-3xl font-bold text-foreground">
             {stats.pct.toFixed(1)}%
           </div>
           <div className="text-xs text-muted-foreground">
-            {stats.matches} hits · {stats.total - stats.matches} misses · phases: i-QC, d-QC, approximant, ordinary
+            {stats.matches} / {stats.total} hits · {stats.outOfScopeTotal} rows are out-of-scope stress tests
           </div>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <select
-            value={showOnlyMatch}
-            onChange={(e) => setShowOnlyMatch(e.target.value as "all" | "match" | "miss")}
-            className="rounded-md border border-border bg-secondary px-2 py-1 text-xs"
-          >
-            <option value="all">All rows</option>
-            <option value="match">Hits only</option>
-            <option value="miss">Misses only</option>
-          </select>
-          <span className="text-[10px] text-muted-foreground">Score updates live as predictor rules change</span>
+      </div>
+
+      {/* COVERAGE GAP — roadmap for ML extension */}
+      {stats.outOfScopeTotal > 0 && (
+        <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs">
+          <div className="mb-2 text-[10px] uppercase tracking-wider text-amber-300">
+            Coverage gap ({stats.outOfScopeTotal} rows) — roadmap for the Random-Forest extension
+          </div>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 text-muted-foreground">
+            {Object.entries(stats.gap)
+              .sort((a, b) => b[1] - a[1])
+              .map(([reason, n]) => (
+                <li key={reason}>
+                  • <span className="text-foreground">{reason}</span>{" "}
+                  <span className="data-mono">×{n}</span>
+                </li>
+              ))}
+          </ul>
         </div>
+      )}
+
+      {/* FILTERS */}
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Filter:</span>
+        <select
+          value={scopeFilter}
+          onChange={(e) => setScopeFilter(e.target.value as "all" | "in" | "out")}
+          className="rounded-md border border-border bg-secondary px-2 py-1"
+        >
+          <option value="all">All scopes</option>
+          <option value="in">In-scope only</option>
+          <option value="out">Out-of-scope only</option>
+        </select>
+        <select
+          value={showOnlyMatch}
+          onChange={(e) => setShowOnlyMatch(e.target.value as "all" | "match" | "miss")}
+          className="rounded-md border border-border bg-secondary px-2 py-1"
+        >
+          <option value="all">Hits + misses</option>
+          <option value="match">Hits only</option>
+          <option value="miss">Misses only</option>
+        </select>
+        <span className="text-[10px] text-muted-foreground">Scores update live as predictor rules change</span>
       </div>
 
       {/* PROCESS → PHASE RULES */}
