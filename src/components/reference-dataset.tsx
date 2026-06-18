@@ -140,7 +140,27 @@ const DATA: RawRow[] = [
   // Single-phase Al-Cu-Fe QC window (phase-diagram boundaries)
   { formula: "Al58Cu28Fe14 (window edge)", Al: 58, Cr: 0, Cu: 28, Fe: 14, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: null, UTS: null, source: "Phase diagram", note: "Lower-Al edge of pure Al-Cu-Fe i-QC window" },
   { formula: "Al70Cu20Fe10 (window edge)", Al: 70, Cr: 0, Cu: 20, Fe: 10, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: null, UTS: null, source: "Phase diagram", note: "Upper-Al edge; beyond → ω-phase boundary" },
+
+  // ── Batch 5: nanocrystalline + catalysis + non-Al-Cu-Fe stable QC systems ──
+  // Inverse Hall-Petch in nanocrystalline i-Al-Cu-Fe (grain size < ~40 nm → softening)
+  { formula: "Al65Cu20Fe15 (nano, 25 nm)",  Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: 480, UTS: null, source: "Inverse H-P", grain_size_nm: 25, note: "Inverse Hall-Petch — hardness drops below ~40 nm grain size" },
+  { formula: "Al65Cu20Fe15 (nano, 60 nm)",  Al: 65, Cr: 0, Cu: 20, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: 690, UTS: null, source: "Inverse H-P", grain_size_nm: 60, note: "Above 40 nm threshold — normal Hall-Petch regime" },
+
+  // Catalysis (post-leach) — methanol steam reforming on leached i-Al-Cu-Fe
+  { formula: "Al60Cu25Fe15 (Na₂CO₃ leached)",      Al: 60, Cr: 0, Cu: 25, Fe: 15, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 0,         phase: "i-QC (catalyst)", HV: null, UTS: null, source: "Catalysis lit.", leaching_agent: "Na₂CO₃", application: "SRM → H₂", active_sites: "Cu/Fe (Fe disperses Cu, no sintering)", note: "Thinner leached layer + better thermal stability than NaOH" },
+  { formula: "Al60Cu22Fe13Co5 (NaOH leached)",     Al: 60, Cr: 0, Cu: 22, Fe: 13, Mn: 0, V: 0, Ti: 0, Ce: 0, Co: 5,         phase: "i-QC + d-QC (catalyst)", HV: null, UTS: null, source: "Catalysis lit.", leaching_agent: "NaOH", application: "Methanol decomposition → CO", active_sites: "Cu/Co", selectivity: "shifted toward CO", note: "Co shifts selectivity from SRM (H₂) → MD (CO)" },
+
+  // Known stable QC systems outside Al-Cu-Fe-(Mn) jurisdiction — tagged out-of-scope (NOT mis-labeled non-QC)
+  { formula: "Al70Pd20Mn10 (i-QC)",          Al: 70, Cr: 0, Cu: 0, Fe: 0, Mn: 10, V: 0, Ti: 0, Ce: 0, Co: 0, phase: "i-QC", HV: null, UTS: null, source: "Tsai 1990",       system: "Al-Pd-Mn",   note: "Canonical Tsai-type i-QC; Pd not in predictor scope" },
+  { formula: "Al65Cu20Co15 (d-QC)",          Al: 65, Cr: 0, Cu: 20, Fe: 0, Mn: 0,  V: 0, Ti: 0, Ce: 0, Co: 15, phase: "d-QC", HV: null, UTS: null, source: "Burkov 1993",     system: "Al-Cu-Co",   note: "Decagonal QC, no Fe — outside i-Al-Cu-Fe band" },
+  { formula: "Al72Ni12Co16 (d-QC)",          Al: 72, Cr: 0, Cu: 0,  Fe: 0, Mn: 0,  V: 0, Ti: 0, Ce: 0, Co: 16, Ni: 12, phase: "d-QC", HV: null, UTS: null, source: "Tsai 1989",   system: "Al-Ni-Co",   note: "Stable basic-Ni decagonal" },
+  { formula: "Ti41.5Zr41.5Ni17 (i-QC)",      Al: 0,  Cr: 0, Cu: 0,  Fe: 0, Mn: 0,  V: 0, Ti: 41.5, Ce: 0, Co: 0, Ni: 17, phase: "i-QC", HV: null, UTS: null, source: "Kelton 1997", system: "Ti-Zr-Ni",   application: "H storage", note: "Hydrogen-storage i-QC, no Al" },
+  { formula: "Zn60Mg30Y10 (i-QC)",           Al: 0,  Cr: 0, Cu: 0,  Fe: 0, Mn: 0,  V: 0, Ti: 0, Ce: 0, Co: 0,         phase: "i-QC", HV: null, UTS: null, source: "Luo 1993",     system: "Zn-Mg-RE",   note: "Zn-Mg-rare-earth Tsai-type" },
+  { formula: "Cd5.7Yb (i-QC)",               Al: 0,  Cr: 0, Cu: 0,  Fe: 0, Mn: 0,  V: 0, Ti: 0, Ce: 0, Co: 0,         phase: "i-QC", HV: null, UTS: null, source: "Tsai 2000",    system: "Cd-Yb",      note: "Binary Tsai-type — first binary i-QC" },
+  { formula: "Ag42In42Yb16 (i-QC)",          Al: 0,  Cr: 0, Cu: 0,  Fe: 0, Mn: 0,  V: 0, Ti: 0, Ce: 0, Co: 0, Ag: 42, phase: "i-QC", HV: null, UTS: null, source: "Guo 2007",     system: "Ag-In-Yb",   note: "Ternary Tsai-type, RE-bearing" },
+  { formula: "Au65Ga20Dy15 (ferromag i-QC)", Al: 0,  Cr: 0, Cu: 0,  Fe: 0, Mn: 0,  V: 0, Ti: 0, Ce: 0, Co: 0,         phase: "i-QC", HV: null, UTS: null, source: "Tamura 2021",  system: "Au-Ga-Dy",   note: "First long-range-ordered ferromagnetic i-QC (T_C ~ 4 K)" },
 ];
+
 
 // Map dataset phase to predictor categories (now includes DQC)
 function reportedKind(r: RawRow): Kind {
