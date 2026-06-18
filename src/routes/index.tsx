@@ -1203,12 +1203,15 @@ For research guidance only — experimental validation required.
             currentApi={props.antibacterial}
             predictFromExt={predictFromExt}
           />
-          <ComparisonPanel
-            slots={slots}
-            saveSlot={saveSlot}
-            clearSlot={clearSlot}
-            currentSlot={currentSlot}
-          />
+          <div className="lg:col-span-12">
+            <ComparisonPanel
+              slots={slots}
+              saveSlot={saveSlot}
+              clearSlot={clearSlot}
+              currentSlot={currentSlot}
+            />
+          </div>
+
 
           {/* Session history */}
           <section className="lg:col-span-12 rounded-xl border border-border bg-card p-5">
@@ -1355,19 +1358,28 @@ For research guidance only — experimental validation required.
           <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
 
           {/* Heat treatment / phase evolution */}
-          <HeatTreatmentPanel comp={comp} predKind={pred.kind === "DQC" ? "QC" : pred.kind} />
+          <div className="lg:col-span-12">
+            <HeatTreatmentPanel comp={comp} predKind={pred.kind === "DQC" ? "QC" : pred.kind} />
+          </div>
 
           {/* 600°C isothermal annealing data */}
-          <Annealing600CPanel />
+          <div className="lg:col-span-12">
+            <Annealing600CPanel />
+          </div>
 
           {/* Co substitution phase map */}
-          <CoSubstitutionPanel />
+          <div className="lg:col-span-12">
+            <CoSubstitutionPanel />
+          </div>
 
           {/* RAG knowledge base — chunks injected into AI Analysis */}
-          <KnowledgeBasePanel />
+          <div className="lg:col-span-12">
+            <KnowledgeBasePanel />
+          </div>
 
           {/* Reference / literature group at bottom */}
           <ReferenceDataset loadExternalComp={loadExternalComp} predictFromExt={predictFromExt} />
+
           <MLDiscoveryPanel loadComp={loadExternalComp} />
           <ReferencesPanel />
         </div>
