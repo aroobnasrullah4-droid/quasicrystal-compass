@@ -212,9 +212,11 @@ type ScopeReason =
   | "Cu > 27 (out of i-QC band)"
   | "Cr/Co/Ni base (phase-determining)"
   | "V/Ti/Ce stabilizer"
-  | "Al/Fe out of i-QC window";
+  | "Al/Fe out of i-QC window"
+  | "Non-Al-Cu-Fe-(Mn) QC system";
 
 function classifyScope(r: RawRow, expected: Kind): { inScope: boolean; reason?: ScopeReason } {
+  if (r.system) return { inScope: false, reason: "Non-Al-Cu-Fe-(Mn) QC system" };
   if (expected === "DQC") return { inScope: false, reason: "decagonal class" };
   if (r.V > 0 || r.Ti > 0 || r.Ce > 0) return { inScope: false, reason: "V/Ti/Ce stabilizer" };
   if (r.Cr > 0 || r.Co > 0 || (r.Ni ?? 0) > 0) return { inScope: false, reason: "Cr/Co/Ni base (phase-determining)" };
@@ -225,6 +227,7 @@ function classifyScope(r: RawRow, expected: Kind): { inScope: boolean; reason?: 
   }
   return { inScope: true };
 }
+
 
 export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
   const [showOnlyMatch, setShowOnlyMatch] = useState<"all" | "match" | "miss">("all");
