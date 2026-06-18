@@ -528,6 +528,10 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
                     r.K_IC_MPa_m != null ? `K_IC ${r.K_IC_MPa_m} MPa·m^½` : null,
                     r.resistivity_uOhm_cm != null ? `ρ ${r.resistivity_uOhm_cm} μΩ·cm` : null,
                     r.grain_softening_nm != null ? `softening < ${r.grain_softening_nm} nm` : null,
+                    r.grain_size_nm != null ? `grain ${r.grain_size_nm} nm${r.grain_size_nm < 40 ? " (inv. H-P)" : ""}` : null,
+                    r.selectivity ? `selectivity: ${r.selectivity}` : null,
+                    r.system ? `system: ${r.system}` : null,
+
                     r.leaching_agent ? `leach: ${r.leaching_agent}` : null,
                     r.application ? `app: ${r.application}` : null,
                     r.active_sites ? `sites: ${r.active_sites}` : null,
