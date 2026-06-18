@@ -1203,12 +1203,15 @@ For research guidance only — experimental validation required.
             currentApi={props.antibacterial}
             predictFromExt={predictFromExt}
           />
-          <ComparisonPanel
-            slots={slots}
-            saveSlot={saveSlot}
-            clearSlot={clearSlot}
-            currentSlot={currentSlot}
-          />
+          <div className="lg:col-span-12">
+            <ComparisonPanel
+              slots={slots}
+              saveSlot={saveSlot}
+              clearSlot={clearSlot}
+              currentSlot={currentSlot}
+            />
+          </div>
+
 
           {/* Session history */}
           <section className="lg:col-span-12 rounded-xl border border-border bg-card p-5">
