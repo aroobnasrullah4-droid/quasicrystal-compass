@@ -404,16 +404,33 @@ export function ReferenceDataset({ loadExternalComp, predictFromExt }: Props) {
 
       {/* OTHER KNOWN STABLE QC SYSTEMS — don't mis-flag */}
       <div className="mb-4 rounded-lg border border-purple-500/30 bg-purple-500/5 p-3 text-xs">
-        <div className="mb-2 text-[10px] uppercase tracking-wider text-purple-300">Other known stable QC systems (out of current predictor scope — do not mis-flag)</div>
+        <div className="mb-2 text-[10px] uppercase tracking-wider text-purple-300">Other known stable QC systems (out of current predictor scope — tagged out-of-scope, do not mis-flag)</div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-1 text-muted-foreground data-mono">
           <span>• Al-Cu-Li (i)</span>
           <span>• Al-Pd-Mn (i)</span>
-          <span>• Al-Co-Ni (d)</span>
+          <span>• Al-Co-Ni / Al-Ni-Co (d)</span>
+          <span>• Al-Cu-Co (d)</span>
           <span>• Al-Cu-Fe-Cr (d)</span>
+          <span>• Ti-Zr-Ni (i, H storage)</span>
+          <span>• Zn-Mg-RE (i)</span>
+          <span>• Cd-Yb (binary i)</span>
+          <span>• Ag-In-Yb (i)</span>
           <span>• Au-Ga-Dy (ferromagnetic i)</span>
           <span>• Al-Zn-Mg (superconducting i)</span>
         </div>
       </div>
+
+      {/* PROPERTY/REFERENCE KNOWLEDGE (does NOT override phase prediction) */}
+      <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 text-xs">
+        <div className="mb-2 text-[10px] uppercase tracking-wider text-emerald-300">Property & structure references (explanation layer only — not used for phase prediction)</div>
+        <ul className="space-y-1 text-muted-foreground">
+          <li>• <span className="text-foreground">Inverse Hall-Petch:</span> in nanocrystalline i-Al-Cu-Fe, hardness <em>decreases</em> below ~40 nm grain size (opposite of classical Hall-Petch). Flag whenever grain size &lt; 40 nm.</li>
+          <li>• <span className="text-foreground">Catalysis (post-leach):</span> Cu-bearing leached i-Al-Cu-Fe → steam reforming of methanol (SRM → H₂). Fe disperses Cu and prevents sintering. Na₂CO₃ leach → thinner active layer + better thermal stability than NaOH. Co doping shifts selectivity toward CO (methanol decomposition). Surface property — does NOT change the bulk QC phase.</li>
+          <li>• <span className="text-foreground">Structure / clusters:</span> Mackay · Bergman · Tsai. 6-D icosahedral lattice via cut-and-project; deviations = phason strain → approximants. Simple-icosahedral (SI) → face-centered-icosahedral (FCI) via chemical ordering (e.g. Al-Mn).</li>
+        </ul>
+      </div>
+
+
 
 
       <div className="overflow-x-auto">
