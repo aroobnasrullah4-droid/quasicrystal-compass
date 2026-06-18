@@ -126,7 +126,40 @@ export const QC_KNOWLEDGE: KnowledgeChunk[] = [
     body:
       "Cu Kα (λ=1.5406 Å), 40 kV/30 mA, 2θ 20-70°, step 0.01°, 0.6 s/step. i-phase peaks (2θ, Cahn-Shechtman-Gratias index): 23.66° (111)(000), 25.93° (311)(111), 27.53° (111)(100), 42.75° (211)(111) and 45.14° (221)(001) [two strongest], 63.87° (222)(002), 65.76° (322)(111). β-Al(Cu,Fe): (110) at 43.65°, superlattice (100) at 30.38° → ordered B2. DTA exothermic peaks: 1 h-milled 375 & 480 °C; 2 h 360 & 475 °C; 4 h & 6 h ~400 °C.",
   },
+  {
+    id: 11,
+    title: "β-phase is the QC precursor (peritectic formation)",
+    tag: "PROCESS",
+    summary: "i-Al-Cu-Fe forms via peritectic β + L → i-QC at ~884°C; reverts to β at ~900°C.",
+    body:
+      "Reaction path on cooling/holding: β-Al(Cu,Fe) (bcc B2) + liquid → i-QC at ~884 °C (peritectic). At 700 °C, i-QC is the thermodynamically stable product (pure i-QC after 72 h anneal). Heating above ~884 °C reverts i-QC → β + L; near 900 °C only β-Al(Cu,Fe) remains. This justifies the process-gate: anneal in 600–880 °C window for QC; anneal > 884 °C → APPROX (β). Mechanistically: β supplies the local Mackay/Bergman cluster precursor; QC nucleation is templated from B2 short-range order.",
+  },
+  {
+    id: 12,
+    title: "Milling reversibility (QC ↔ β, ~10 nm critical)",
+    tag: "PROCESS",
+    summary: "Mechanical milling drives QC→β at ~10 nm grain size; high-T anneal reverses.",
+    body:
+      "Mechanical alloying / milling progressively refines the i-QC grain size and accumulates strain. Once crystallite size reaches a critical ~10 nm (typically by 7–10 h in planetary mill at 300 rpm, BPR 30:1), the icosahedral order collapses into bcc β-Al(Cu,Fe) (CsCl/B2). Annealing the milled powder at ≤ ~1073 K (≤ ~800 °C) reverses β → i-QC and recovers microhardness toward the 8–10 GPa range. This is why MA-only rows fail the process-gate and predict APPROX; an MA + ≥600 °C anneal step restores QC prediction.",
+  },
+  {
+    id: 13,
+    title: "Inverse Hall-Petch threshold (~40 nm)",
+    tag: "PROPERTIES",
+    summary: "Above ~40 nm: classical H-P hardening; below: softening (IHP).",
+    body:
+      "Hall-Petch: H = H0 + k_H · d^(-1/2) holds for nanocrystalline i-Al-Cu-Fe down to a critical grain size d_c ≈ 40 nm. Below d_c, grain-boundary-mediated deformation dominates and hardness decreases with further refinement (inverse Hall-Petch). Implication for the predictor's explanation layer: report 'IHP softening' whenever grain_size_nm < 40, even if phase prediction is still i-QC.",
+  },
+  {
+    id: 14,
+    title: "Composite strengthening & ω-Al₇Cu₂Fe reaction",
+    tag: "PROPERTIES",
+    summary: "Al + QC particles strengthened by load-transfer + dislocations + MLS (dominant). Above ~723 K → ω-Al₇Cu₂Fe.",
+    body:
+      "In Al-matrix / i-QC particle composites, yield-strength increase decomposes into three additive contributions: (i) load-bearing (Eshelby) transfer to stiff QC particles, (ii) Orowan / forest dislocation hardening, and (iii) matrix-ligament-size (MLS) refinement — MLS is typically the dominant term. Thermal exposure above ~723 K (~450 °C) triggers the interfacial reaction Al + i-Al-Cu-Fe → ω-Al₇Cu₂Fe (tetragonal approximant), which further raises yield strength but consumes the QC phase. Label this as an ω-phase reaction / property hint, not as a new QC-forming prediction band.",
+  },
 ];
+
 
 /** Compact context string used as RAG grounding in the AI system prompt. */
 export function buildKnowledgeContext(): string {
