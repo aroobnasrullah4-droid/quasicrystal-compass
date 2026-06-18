@@ -158,6 +158,54 @@ export const QC_KNOWLEDGE: KnowledgeChunk[] = [
     body:
       "In Al-matrix / i-QC particle composites, yield-strength increase decomposes into three additive contributions: (i) load-bearing (Eshelby) transfer to stiff QC particles, (ii) Orowan / forest dislocation hardening, and (iii) matrix-ligament-size (MLS) refinement — MLS is typically the dominant term. Thermal exposure above ~723 K (~450 °C) triggers the interfacial reaction Al + i-Al-Cu-Fe → ω-Al₇Cu₂Fe (tetragonal approximant), which further raises yield strength but consumes the QC phase. Label this as an ω-phase reaction / property hint, not as a new QC-forming prediction band.",
   },
+  {
+    id: 15,
+    title: "e/a validation — natural vs synthetic Al-Cu-Fe-Si",
+    tag: "PREDICTOR",
+    summary: "Cross-check: natural and synthetic Al-Cu-Fe-Si QCs both land at e/a ≈ 1.82, anchoring the Hume-Rothery engine.",
+    body:
+      "Natural icosahedrite (Al63Cu24Fe13 from the Khatyrka meteorite) and synthetic Al-Cu-Fe-Si quasicrystals both yield e/a ≈ 1.82 when computed with the same Raynor effective valences (Al=3, Cu=1, Fe≈−2.66, Si=4). This confirms the e/a engine is well-anchored: the canonical Al-Cu-Fe i-QC window sits at e/a ≈ 1.75–1.82, and Si substitution (up to ~2 at%) raises the effective value slightly without destabilizing the i-phase.",
+  },
+  {
+    id: 16,
+    title: "Leaching surface chemistry (NaOH)",
+    tag: "PROCESS",
+    summary: "NaOH selectively removes Al → Fe₂O₃ + Cu₂O top layer; QC core intact. Nanoparticles 5–20 nm, epitaxial.",
+    body:
+      "NaOH leaching of i-Al-Cu-Fe selectively dissolves aluminum: Al → NaAlO₂ (washed away) + residual Al₂O₃. The resulting surface hierarchy is: (1) top oxide layer Fe₂O₃ + Cu₂O, (2) subsurface Cu/Fe alloy + Fe₃O₄, (3) intact QC core. Oxide nanoparticles are 5–20 nm, epitaxially aligned to the quasicrystal (Cu(111) and Fe(110) parallel to QC dense planes). This epitaxial lock explains the anti-sintering thermal stability observed in catalysis experiments. Cu oxides are the antibacterial active sites; the QC skeleton provides structural stability.",
+  },
+  {
+    id: 17,
+    title: "Peritectic formation temperature (Huttunen review)",
+    tag: "PROCESS",
+    summary: "Huttunen lists peritectic QC formation at ~860 °C; treat as ~860–884 °C band.",
+    body:
+      "Huttunen-Saloranta et al. (review of Al-Cu-Fe phase diagrams) report the peritectic reaction β-Al(Cu,Fe) + liquid → i-QC at ~860 °C. This is consistent with the ~884 °C figure already embedded from Rosas 1998 / DTA data. For the predictor, treat the peritectic window as ~860–884 °C: annealing inside this band can yield mixed QC+β, while annealing above the upper bound drives full reversion to β. Below ~860 °C the i-QC is the thermodynamically stable solid-state product.",
+  },
+  {
+    id: 18,
+    title: "Synthesis-route map (optimal processing recommendation)",
+    tag: "PROCESS",
+    summary: "Casting → stable QC + crystals; melt-spin → metastable ribbon; gas atomization → spherical powder; MA → metastable solid-state.",
+    body:
+      "Four primary synthesis routes for Al-Cu-Fe-based quasicrystals: (1) CASTING — slow cooling from melt yields stable i-QC coexisting with crystalline phases (β, λ-Al13Fe4, θ-Al2Cu); best for bulk specimens and property studies. (2) MELT-SPINNING — rapid solidification (~10^6 °C/s) produces metastable i-QC ribbon; suppresses β nucleation, high defect density, decomposes on heating. (3) GAS ATOMIZATION — spherical powder particles with rapid cooling; used for plasma spraying and composite feedstock. (4) MECHANICAL ALLOYING — solid-state processing; i-QC forms only after post-MA anneal ≥700 °C; over-milling (>6–10 h) collapses i-QC into nanocrystalline β-Al(Cu,Fe). Use this map to populate the 'optimal processing' recommendation field.",
+  },
+  {
+    id: 19,
+    title: "Recycled feedstock & QC/PA6 composites",
+    tag: "PROPERTIES",
+    summary: "Al-Cu-Fe QC forms from recycled Al (Mn/Ca/Si impurities). QC/PA6 band gap ~1–1.3 eV (semiconducting).",
+    body:
+      "Al-Cu-Fe quasicrystals can be synthesized successfully from recycled aluminum feedstock even in the presence of Mn, Ca, and Si impurities. When compounded with PA6 (nylon-6) polymer matrix, the resulting QC/PA6 composite exhibits a semiconducting band gap of approximately 1–1.3 eV. This is an application-layer / property note only; the impurities do not open new QC-forming composition bands outside the validated Al-Cu-Fe-(Mn) window.",
+  },
+  {
+    id: 20,
+    title: "XRD identification of icosahedral QCs",
+    tag: "XRD",
+    summary: "Powder patterns index with 6 indices (N,M); self-similar by τ⁶; quasicrystallinity scored by peak deviation + Fibonacci spacing.",
+    body:
+      "Icosahedral quasicrystals are identified in powder XRD by indexing with six Miller-like indices (N/M notation) rather than the usual three. The diffraction pattern is self-similar under scaling by τ⁶ (where τ = (1+√5)/2). Practical 'quasicrystallinity' is scored by two criteria: (1) peak-position deviation from ideal τ-scaling must be small, and (2) peak intensities follow a Fibonacci-interval sequence. Use these rules only when explicitly asked to assess an XRD pattern; they do not override composition-based phase prediction.",
+  },
 ];
 
 
