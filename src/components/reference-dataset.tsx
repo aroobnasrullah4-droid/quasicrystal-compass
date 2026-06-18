@@ -45,7 +45,11 @@ interface RawRow {
   active_sites?: string;
   DIZ_mm?: number;
   HV_GPa?: number;
+  grain_size_nm?: number;
+  selectivity?: string;
+  system?: string; // e.g. "Al-Pd-Mn (i)" — non-Al-Cu-Fe-(Mn) QC system, forced out-of-scope
 }
+
 
 // Literature dataset
 const DATA: RawRow[] = [
