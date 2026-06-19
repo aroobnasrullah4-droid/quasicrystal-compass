@@ -238,6 +238,22 @@ export const QC_KNOWLEDGE: KnowledgeChunk[] = [
     body:
       "Quasicrystal coatings are the most viable route for bulk QC utilization given intrinsic brittleness. Thermal-spray options: (1) plasma spray — produces porous, partially oxidized coatings; (2) HVOF — higher velocity yields denser, less-oxidized deposits; (3) cold spray — lowest porosity but challenging for brittle QC feedstock because of required plastic deformation. PVD options: e-beam evaporation demands tight stoichiometry control; magnetron sputtering gives uniform thin films. The first commercial QC coating was non-stick cookware marketed under the brand Cybernox. Use this map to populate the 'optimal processing' recommendation field.",
   },
+  {
+    id: 25,
+    title: "Thermodynamic design parameters (future ML features)",
+    tag: "ML-FEATURE",
+    summary: "Candidate primary features for the Random Forest extension: S_conf, S_mis, ΔG_ss, e/a, and atomic-size δ.",
+    body:
+      "Quasicrystal formation is favored by a balance of high configurational entropy (S_conf) against the Gibbs free energy of solid-solution formation (ΔG_ss). Also track mismatch entropy (S_mis) and Miedema enthalpies. In Al-Ni-Fe, optimizing ΔG_ss selected Al71Ni24Fe5 as the QC former. Flag these parameters — configurational entropy, mismatch entropy, ΔG_ss, e/a, and atomic-size mismatch δ — as candidate primary features for the Random Forest extension, alongside the existing at% band descriptors.",
+  },
+  {
+    id: 26,
+    title: "Corrosion resistance of QC-phase Al-Ni-Fe",
+    tag: "PROPERTIES",
+    summary: "QC-phase Al-Ni-Fe shows ~6× lower corrosion rate than its crystalline counterpart; fewer galvanic microcells + higher Ni passivation.",
+    body:
+      "The quasicrystalline phase of Al-Ni-Fe exhibits approximately six times lower corrosion rate than its crystalline counterpart. The mechanism combines two effects: (1) the QC phase itself and the absence of free aluminum reduce galvanic microcells, and (2) higher nickel content improves passivation. This is a property-layer / application note only; it does not override composition-based phase prediction.",
+  },
 ];
 
 
