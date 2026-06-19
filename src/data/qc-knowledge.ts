@@ -206,6 +206,38 @@ export const QC_KNOWLEDGE: KnowledgeChunk[] = [
     body:
       "Icosahedral quasicrystals are identified in powder XRD by indexing with six Miller-like indices (N/M notation) rather than the usual three. The diffraction pattern is self-similar under scaling by τ⁶ (where τ = (1+√5)/2). Practical 'quasicrystallinity' is scored by two criteria: (1) peak-position deviation from ideal τ-scaling must be small, and (2) peak intensities follow a Fibonacci-interval sequence. Use these rules only when explicitly asked to assess an XRD pattern; they do not override composition-based phase prediction.",
   },
+  {
+    id: 21,
+    title: "Carbon reinforcement (~5 at% C in i-Al-Cu-Fe)",
+    tag: "PROPERTIES",
+    summary: "~5 at% mechanically-activated carbon → ~37% hardness gain (5.07→6.76 GPa) + crack-free to 1000g. Carbon sits at grain boundaries, cuts porosity, impedes cracks.",
+    body:
+      "Introducing approximately 5 at% mechanically-activated carbon into i-Al-Cu-Fe increases Vickers hardness by roughly 37% (from ~5.07 GPa to ~6.76 GPa) and maintains crack-free integrity under 1000 g loads, indicating a significant toughness improvement. The carbon segregates to grain boundaries, reducing porosity and impeding crack propagation. This is a property-layer / processing note only — carbon does not alter the icosahedral phase prediction band.",
+  },
+  {
+    id: 22,
+    title: "Calcination catalysis (post-leach spinel route)",
+    tag: "PROCESS",
+    summary: "Leach → calcine 600°C in air → CuFeAlO₄ spinel + CuO; H₂ pre-reduction → fine ~10 nm Cu in (Fe,Al)₃O₄, epitaxial to spinel → anti-sinter, ~5× SRM activity.",
+    body:
+      "Extending the leaching rule: after NaOH dealloying of i-Al-Cu-Fe, calcination at 600 °C in air converts the surface into CuFeAlO₄ spinel plus CuO. Subsequent H₂ pre-reduction generates fine (~10 nm) Cu nanoparticles embedded in a (Fe,Al)₃O₄ matrix, epitaxially locked to the spinel. This epitaxial constraint provides anti-sintering stability and yields roughly 5× higher steam-reforming-of-methanol (SRM) activity compared to non-epitaxial counterparts. The QC core remains intact; this is a surface/catalyst label only and does not override bulk phase prediction.",
+  },
+  {
+    id: 23,
+    title: "Methylene-blue dye degradation (leached QC catalyst)",
+    tag: "PROPERTIES",
+    summary: "Leached i-Al-Cu-Fe (Cu/Fe + Cu₂O/Fe₃O₄, 13–40 nm) → pseudo-first-order, kapp≈0.017 min⁻¹. Application note.",
+    body:
+      "Leached i-Al-Cu-Fe surfaces bearing Cu/Fe alloy together with Cu₂O/Fe₃O₄ oxides (particle size 13–40 nm) degrade methylene-blue dye via a pseudo-first-order kinetic process with an apparent rate constant k_app ≈ 0.017 min⁻¹. This is an application-layer note only; the catalytic activity derives from the leached surface hierarchy, not from a change in the bulk quasicrystal phase.",
+  },
+  {
+    id: 24,
+    title: "Coating-fabrication routes for QC bulk use",
+    tag: "PROCESS",
+    summary: "Thermal spray (plasma = porous/oxidized; HVOF = denser; cold spray = low-porosity but hard for brittle QC) or PVD (e-beam needs stoichiometry control; magnetron sputtering = uniform films). First commercial: non-stick cookware (Cybernox).",
+    body:
+      "Quasicrystal coatings are the most viable route for bulk QC utilization given intrinsic brittleness. Thermal-spray options: (1) plasma spray — produces porous, partially oxidized coatings; (2) HVOF — higher velocity yields denser, less-oxidized deposits; (3) cold spray — lowest porosity but challenging for brittle QC feedstock because of required plastic deformation. PVD options: e-beam evaporation demands tight stoichiometry control; magnetron sputtering gives uniform thin films. The first commercial QC coating was non-stick cookware marketed under the brand Cybernox. Use this map to populate the 'optimal processing' recommendation field.",
+  },
 ];
 
 
