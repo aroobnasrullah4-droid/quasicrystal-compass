@@ -254,6 +254,46 @@ export const QC_KNOWLEDGE: KnowledgeChunk[] = [
     body:
       "The quasicrystalline phase of Al-Ni-Fe exhibits approximately six times lower corrosion rate than its crystalline counterpart. The mechanism combines two effects: (1) the QC phase itself and the absence of free aluminum reduce galvanic microcells, and (2) higher nickel content improves passivation. This is a property-layer / application note only; it does not override composition-based phase prediction.",
   },
+  {
+    id: 27,
+    title: "ML benchmark — Liu et al. 2021 Random Forest",
+    tag: "ML-FEATURE",
+    summary: "Random Forest 3-class classifier (QC / approximant / other) on 80 QCs + 78 ACs + ~10,000 ordinary crystals; 232-dim descriptor from 58 elemental properties; accuracy ~0.728. Independently rediscovered e/a ≈ 1.8.",
+    body:
+      "Liu et al. (2021) trained a Random Forest classifier for three classes — quasicrystal, approximant, and ordinary crystal — using 80 QCs, 78 approximants, and roughly 10,000 ordinary crystals. Composition was encoded as a 232-dimensional descriptor derived from 58 elemental properties (electronegativity, atomic radius, van der Waals radius, etc.) via weighted-average and variance. The model achieved an overall accuracy of approximately 0.728. Importantly, it independently rediscovered the Hume-Rothery e/a ≈ 1.8 rule without being given e/a explicitly, and its predictions validated against known Al-Mn-Cu phase diagrams. Use this as the target architecture and baseline for the ML extension: ~0.73 across the full multi-system space is the number to beat, while the current in-scope ~85–90% on Al-Cu-Fe-(Mn) is already competitive within its jurisdiction. Confirms the feature roadmap (e/a, vdW radius, electronegativity, atomic size) flagged in earlier batches.",
+  },
+  {
+    id: 28,
+    title: "Li-ion storage in i-Al-Cu-Fe",
+    tag: "PROPERTIES",
+    summary: "Reversible Al-Li solid solution raises interplanar spacing, but irreversible Li trapping causes capacity fade; not yet competitive with graphite.",
+    body:
+      "Icosahedral Al-Cu-Fe stores lithium reversibly via an aluminum-lithium solid solution mechanism, with interplanar spacing increasing upon lithiation. However, irreversible lithium trapping within the QC structure leads to capacity fade over cycles, so the material is not yet competitive with graphite anodes. This is a property-layer / application note only; it does not alter the i-QC phase prediction band.",
+  },
+  {
+    id: 29,
+    title: "Hydrogen storage in Ti-Zr-Ni i-QC",
+    tag: "PROPERTIES",
+    summary: "Ti-Zr-Ni i-QC outperforms amorphous counterpart in discharge capacity; Cr-for-Ni substitution roughly doubles capacity; single-phase QC is difficult to obtain.",
+    body:
+      "Ti-Zr-Ni icosahedral quasicrystals show higher hydrogen-storage discharge capacity than their amorphous counterparts. Substituting chromium for nickel approximately doubles the capacity. Obtaining a single-phase QC is challenging because secondary Cr₂Zr and TiO phases typically form. This is a property-layer note for the Ti-Zr-Ni system, which is outside the Al-Cu-Fe-(Mn) predictor jurisdiction and therefore tagged out-of-scope.",
+  },
+  {
+    id: 30,
+    title: "QC coatings / composites — Fikar mechanisms",
+    tag: "PROPERTIES",
+    summary: "Cracked QC coatings exhibit solid-friction damping and modulus anomaly; brittle-to-ductile onset ~1.8–2.0 eV; molten Al/Mg infiltration transforms QC particles.",
+    body:
+      "Cracked quasicrystal coatings display solid-friction damping and an anomalous modulus effect. The brittle-to-ductile transition onset occurs at an activation energy of roughly 1.8–2.0 eV. Molten aluminum or magnesium infiltration transforms QC particles; the quasicrystal phase is best preserved when infiltrated with a low-melting Al₃Mg₂ matrix. This is a property-layer / application note only; it does not override composition-based phase prediction.",
+  },
+  {
+    id: 31,
+    title: "Macia framing — defining feature of quasicrystals",
+    tag: "CONCEPT",
+    summary: "Quasiperiodic order via scale/inflation symmetry; properties stem from pseudogap + low-diffusivity critical electronic states; nanoscale QCs can be ductile.",
+    body:
+      "Enrique Macia frames the defining feature of quasicrystals as quasiperiodic order arising from scale and inflation symmetry (τ-scaling), rather than mere forbidden rotational symmetry. Key properties originate from the Hume-Rothery pseudogap at the Fermi level combined with low-diffusivity 'critical' electronic states. A notable implication is that nanoscale quasicrystals can exhibit ductility, mitigating the intrinsic brittleness of bulk QC materials. This is a conceptual grounding note for the explanation layer; it does not override composition-based phase prediction.",
+  },
 ];
 
 
