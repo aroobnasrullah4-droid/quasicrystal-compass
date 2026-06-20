@@ -799,10 +799,10 @@ For research guidance only — experimental validation required.
                     <span className="block">
                       <strong className="text-foreground">Development Roadmap:</strong>
                       <ul className="ml-4 mt-1 list-disc space-y-0.5">
-                        <li>v1.0 — Rule-based heuristic engine</li>
-                        <li>v2.0 — Extended modules: XRD simulation, leaching, CNT growth, AI analysis</li>
-                        <li>v3.0 — Random Forest model (HYPOD-X trained)</li>
-                        <li>v4.0 — Experimental validation integrated</li>
+                        <li>v1.0 — Rule-based heuristic engine ✓</li>
+                        <li>v2.0 — Extended modules: XRD, leaching, CNT, AI analysis ✓</li>
+                        <li>v3.0 — Random Forest model trained on HYPOD-X database ✓ LIVE</li>
+                        <li>v4.0 — Experimental validation integration (in progress)</li>
                       </ul>
                     </span>
                     <span className="block italic">
