@@ -422,6 +422,40 @@ function QCPredictor() {
   const [slots, setSlots] = useState<(Slot | null)[]>([null, null, null]);
   const [loadedFrom, setLoadedFrom] = useState<string | null>("Tsai Classic");
   const [pulseKey, setPulseKey] = useState(0);
+  const [mlLoading, setMlLoading] = useState(false);
+  const [mlError, setMlError] = useState<string | null>(null);
+  const [mlResult, setMlResult] = useState<{
+    qc_probability: number;
+    prediction: string;
+    e_per_a: number;
+    top_features?: Record<string, unknown>;
+  } | null>(null);
+
+  const runMlPredict = async () => {
+    setMlLoading(true);
+    setMlError(null);
+    try {
+      const res = await fetch("https://aroobmunaam-qc-phase-predictor.hf.space/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          composition: {
+            Al: Number(comp.Al),
+            Cu: Number(comp.Cu),
+            Fe: Number(comp.Fe),
+            Mn: Number(comp.Mn),
+          },
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      setMlResult(data);
+    } catch (e: any) {
+      setMlError(e?.message ?? "Request failed");
+    } finally {
+      setMlLoading(false);
+    }
+  };
 
   const desc = useMemo(() => computeDescriptors(comp), [comp]);
   const pred = useMemo(() => predict(comp, desc.e_a, desc.total), [comp, desc]);
