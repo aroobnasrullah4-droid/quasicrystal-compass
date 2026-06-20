@@ -431,11 +431,15 @@ function QCPredictor() {
     top_features?: Record<string, unknown>;
   } | null>(null);
 
-  const runMlPredict = async () => {
-    setMlLoading(true);
-    setMlError(null);
-    try {
-      const res = await fetch("https://aroobmunaam-qc-phase-predictor.hf.space/predict", {
+  // Auto-run ML prediction on composition change (debounced 800ms)
+  useEffect(() => {
+    const total = Number(comp.Al) + Number(comp.Cu) + Number(comp.Fe) + Number(comp.Mn);
+    if (total <= 0) return;
+    let cancelled = false;
+    const t = setTimeout(() => {
+      setMlLoading(true);
+      setMlError(null);
+      fetch("https://aroobmunaam-qc-phase-predictor.hf.space/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -446,16 +450,26 @@ function QCPredictor() {
             Mn: Number(comp.Mn),
           },
         }),
-      });
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      const data = await res.json();
-      setMlResult(data);
-    } catch (e: any) {
-      setMlError(e?.message ?? "Request failed");
-    } finally {
-      setMlLoading(false);
-    }
-  };
+      })
+        .then((r) => {
+          if (!r.ok) throw new Error(`API ${r.status}`);
+          return r.json();
+        })
+        .then((d) => {
+          if (!cancelled) setMlResult(d);
+        })
+        .catch((e: any) => {
+          if (!cancelled) setMlError(e?.message ?? "Request failed");
+        })
+        .finally(() => {
+          if (!cancelled) setMlLoading(false);
+        });
+    }, 800);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [comp.Al, comp.Cu, comp.Fe, comp.Mn]);
 
   const desc = useMemo(() => computeDescriptors(comp), [comp]);
   const pred = useMemo(() => predict(comp, desc.e_a, desc.total), [comp, desc]);
