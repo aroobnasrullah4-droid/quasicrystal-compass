@@ -422,6 +422,40 @@ function QCPredictor() {
   const [slots, setSlots] = useState<(Slot | null)[]>([null, null, null]);
   const [loadedFrom, setLoadedFrom] = useState<string | null>("Tsai Classic");
   const [pulseKey, setPulseKey] = useState(0);
+  const [mlLoading, setMlLoading] = useState(false);
+  const [mlError, setMlError] = useState<string | null>(null);
+  const [mlResult, setMlResult] = useState<{
+    qc_probability: number;
+    prediction: string;
+    e_per_a: number;
+    top_features?: Record<string, unknown>;
+  } | null>(null);
+
+  const runMlPredict = async () => {
+    setMlLoading(true);
+    setMlError(null);
+    try {
+      const res = await fetch("https://aroobmunaam-qc-phase-predictor.hf.space/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          composition: {
+            Al: Number(comp.Al),
+            Cu: Number(comp.Cu),
+            Fe: Number(comp.Fe),
+            Mn: Number(comp.Mn),
+          },
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const data = await res.json();
+      setMlResult(data);
+    } catch (e: any) {
+      setMlError(e?.message ?? "Request failed");
+    } finally {
+      setMlLoading(false);
+    }
+  };
 
   const desc = useMemo(() => computeDescriptors(comp), [comp]);
   const pred = useMemo(() => predict(comp, desc.e_a, desc.total), [comp, desc]);
@@ -988,7 +1022,10 @@ For research guidance only — experimental validation required.
                   <div className="flex-1">
                     <div className="text-xs uppercase tracking-wider text-muted-foreground">
                       Confidence
-                    </div>
+            </div>
+
+
+
                     <div className="data-mono text-2xl font-bold" style={{ color: pred.color }}>
                       {pred.confidence.toFixed(1)}%
                     </div>
@@ -1031,6 +1068,64 @@ For research guidance only — experimental validation required.
                 api={props.antibacterial}
               />
             )}
+
+            {/* Live ML prediction (Hugging Face API) */}
+            <div className="mt-4 rounded-xl border border-border bg-secondary/30 p-4">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="text-xs uppercase tracking-wider text-primary">Live ML Model</div>
+                  <div className="text-sm font-semibold">Hugging Face QC Phase Predictor</div>
+                </div>
+                <button
+                  onClick={runMlPredict}
+                  disabled={mlLoading || pred.kind === "INVALID"}
+                  className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {mlLoading ? "Predicting…" : "Run ML Predict"}
+                </button>
+              </div>
+
+              {mlError && (
+                <div
+                  className="mt-3 rounded-md border px-3 py-2 text-xs"
+                  style={{ borderColor: "#EF444466", background: "#EF444414", color: "#EF4444" }}
+                >
+                  ⚠ {mlError}
+                </div>
+              )}
+
+              {mlResult && !mlError && (
+                <div className="mt-3 grid grid-cols-3 gap-2">
+                  <div className="rounded-lg border border-border bg-card p-3">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">QC Probability</div>
+                    <div className="data-mono text-xl font-bold text-primary">
+                      {(mlResult.qc_probability * 100).toFixed(1)}%
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-3">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Prediction</div>
+                    <div
+                      className="data-mono text-sm font-bold"
+                      style={{
+                        color: mlResult.prediction?.toLowerCase().includes("non")
+                          ? "#EF4444"
+                          : "#22C55E",
+                      }}
+                    >
+                      {mlResult.prediction}
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-border bg-card p-3">
+                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">e/a ratio</div>
+                    <div className="data-mono text-xl font-bold text-foreground">
+                      {mlResult.e_per_a.toFixed(3)}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+
 
             {/* Hume-Rothery gauge */}
             <div className="mt-5 rounded-lg border border-border bg-secondary/30 p-4">
