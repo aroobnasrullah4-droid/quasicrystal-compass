@@ -1507,6 +1507,9 @@ For research guidance only — experimental validation required.
                           <td className="px-2 py-1.5 text-left text-muted-foreground font-sans">
                             {r.source === "Literature" ? "Reference Composition" : "User-Defined"}
                           </td>
+                          <td className="px-2 py-1.5 text-left text-muted-foreground font-sans uppercase text-[10px]">
+                            {r.tab === "qc" ? "QC" : r.tab === "cnt" ? "CNT" : r.tab === "doping" ? "Doping" : "HT"}
+                          </td>
                         </tr>
                       );
                     })}
