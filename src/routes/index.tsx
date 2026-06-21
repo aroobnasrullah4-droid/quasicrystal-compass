@@ -1469,7 +1469,7 @@ For research guidance only — experimental validation required.
                 <tbody className="data-mono">
                   {history.length === 0 && (
                     <tr>
-                      <td colSpan={10} className="px-2 py-6 text-center text-muted-foreground">
+                      <td colSpan={11} className="px-2 py-6 text-center text-muted-foreground">
                         Adjust composition or load a preset to begin logging predictions.
                       </td>
                     </tr>
