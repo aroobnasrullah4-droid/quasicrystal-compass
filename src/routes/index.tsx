@@ -1526,31 +1526,6 @@ For research guidance only — experimental validation required.
           {/* Export */}
           <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
 
-          {/* Heat treatment / phase evolution */}
-          <div className="lg:col-span-12">
-            <HeatTreatmentPanel comp={comp} predKind={pred.kind === "DQC" ? "QC" : pred.kind} />
-          </div>
-
-          {/* 600°C isothermal annealing data */}
-          <div className="lg:col-span-12">
-            <Annealing600CPanel />
-          </div>
-
-          {/* Co substitution phase map */}
-          <div className="lg:col-span-12">
-            <CoSubstitutionPanel />
-          </div>
-
-          {/* RAG knowledge base — chunks injected into AI Analysis */}
-          <div className="lg:col-span-12">
-            <KnowledgeBasePanel />
-          </div>
-
-          {/* Reference / literature group at bottom */}
-          <ReferenceDataset loadExternalComp={loadExternalComp} predictFromExt={predictFromExt} />
-
-          <MLDiscoveryPanel loadComp={loadExternalComp} />
-          <ReferencesPanel />
         </div>
 
 
