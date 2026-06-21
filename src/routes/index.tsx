@@ -964,6 +964,37 @@ For research guidance only — experimental validation required.
             </div>
           </section>
 
+          {/* TABS WRAPPER (right column on desktop, below composition on mobile) */}
+          <div className="lg:col-span-8">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabKey)}>
+              <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg bg-secondary/40 p-1">
+                <TabsTrigger value="qc" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  QC Prediction
+                  <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-mono text-emerald-400">
+                    ● ML Connected
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="cnt" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  CNT Growth
+                  <span className="rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-mono text-sky-400">
+                    Literature Model
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="doping" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Doping Effects
+                  <span className="rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-mono text-sky-400">
+                    Literature Model
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="ht" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Heat Treatment
+                  <span className="rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-mono text-sky-400">
+                    Literature Model
+                  </span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="qc" className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-8">
           {/* PANEL 2 — PREDICTION */}
           <section className="lg:col-span-5 rounded-xl border border-border bg-card p-5">
             <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 02</div>
