@@ -524,6 +524,7 @@ function QCPredictor() {
             pred,
             source,
             ts: new Date().toLocaleTimeString(),
+            tab: activeTab,
           },
         ].slice(-50);
       });
