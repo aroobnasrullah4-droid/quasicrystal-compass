@@ -1342,9 +1342,10 @@ For research guidance only — experimental validation required.
 
           {/* XRD sits right next to the prediction so users see the diffraction
               signature of the phase without scrolling */}
-          <div className="lg:col-span-12">
+          <div className="lg:col-span-8">
             <XRDVisualizer phaseKind={pred.kind === "QC" || pred.kind === "DQC" ? "QC" : pred.kind === "APPROX" ? "APPROX" : "ORDINARY"} cntYield={pred.kind === "QC" ? 20 : 0} />
           </div>
+          <div className="hidden lg:block lg:col-span-12" />
 
           {/* Properties group — predicted material behavior */}
           <PropertiesPanel props={props} />
