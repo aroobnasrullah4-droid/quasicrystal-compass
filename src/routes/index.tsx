@@ -1463,6 +1463,7 @@ For research guidance only — experimental validation required.
                     <th className="px-2 py-2 text-left">Predicted Phase</th>
                     <th className="px-2 py-2 text-right">Conf%</th>
                     <th className="px-2 py-2 text-left">Input Method</th>
+                    <th className="px-2 py-2 text-left">Tab</th>
                   </tr>
                 </thead>
                 <tbody className="data-mono">
