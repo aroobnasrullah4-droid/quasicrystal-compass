@@ -23,26 +23,17 @@ import {
   simulateLeaching,
   PropertiesPanel,
   StabilityPanel,
-  LeachingPanel,
   ComparisonPanel,
   ExportPanel,
   type Slot,
 } from "@/components/qc-modules";
-import {
-  MLDiscoveryPanel,
-  DopantExplorer,
-  TsaiRulesPanel,
-  QCTypeIndicator,
-  ReferencesPanel,
-} from "@/components/qc-extras";
-import { CNTPredictor } from "@/components/cnt-predictor";
+import { QCTypeIndicator } from "@/components/qc-extras";
 import { XRDVisualizer } from "@/components/xrd-visualizer";
 import { AIAnalysis } from "@/components/ai-analysis";
-import { ReferenceDataset } from "@/components/reference-dataset";
-import { HeatTreatmentPanel } from "@/components/heat-treatment";
-import { CoSubstitutionPanel } from "@/components/co-substitution";
-import { Annealing600CPanel } from "@/components/annealing-600c";
-import { KnowledgeBasePanel } from "@/components/knowledge-base";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { CNTGrowthTab } from "@/components/cnt-growth-tab";
+import { DopingTab } from "@/components/doping-tab";
+import { HeatTreatmentTab } from "@/components/heat-treatment-tab";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -401,6 +392,8 @@ function autoNormalize(c: Comp): Comp {
 type Mode = "literature" | "explorer";
 type Source = "Literature" | "Manual";
 
+type TabKey = "qc" | "cnt" | "doping" | "ht";
+
 interface HistoryRow {
   id: number;
   comp: Comp;
@@ -408,6 +401,7 @@ interface HistoryRow {
   pred: Prediction;
   source: Source;
   ts: string;
+  tab: TabKey;
 }
 
 function QCPredictor() {
@@ -418,7 +412,8 @@ function QCPredictor() {
   const [showPresets, setShowPresets] = useState(true);
   const [showHistory, setShowHistory] = useState(true);
   const [historyFilter, setHistoryFilter] = useState<"ALL" | "QC" | "APPROX" | "ORDINARY">("ALL");
-  const [naoh, setNaoh] = useState(10);
+  const [activeTab, setActiveTab] = useState<TabKey>("qc");
+  const [naoh] = useState(10);
   const [slots, setSlots] = useState<(Slot | null)[]>([null, null, null]);
   const [loadedFrom, setLoadedFrom] = useState<string | null>("Tsai Classic");
   const [pulseKey, setPulseKey] = useState(0);
@@ -529,6 +524,7 @@ function QCPredictor() {
             pred,
             source,
             ts: new Date().toLocaleTimeString(),
+            tab: activeTab,
           },
         ].slice(-50);
       });
@@ -968,6 +964,37 @@ For research guidance only — experimental validation required.
             </div>
           </section>
 
+          {/* TABS WRAPPER (right column on desktop, below composition on mobile) */}
+          <div className="lg:col-span-8">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabKey)}>
+              <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg bg-secondary/40 p-1">
+                <TabsTrigger value="qc" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  QC Prediction
+                  <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-mono text-emerald-400">
+                    ● ML Connected
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="cnt" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  CNT Growth
+                  <span className="rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-mono text-sky-400">
+                    Literature Model
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="doping" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Doping Effects
+                  <span className="rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-mono text-sky-400">
+                    Literature Model
+                  </span>
+                </TabsTrigger>
+                <TabsTrigger value="ht" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  Heat Treatment
+                  <span className="rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-mono text-sky-400">
+                    Literature Model
+                  </span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="qc" className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-8">
           {/* PANEL 2 — PREDICTION */}
           <section className="lg:col-span-5 rounded-xl border border-border bg-card p-5">
             <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 02</div>
@@ -1222,41 +1249,6 @@ For research guidance only — experimental validation required.
               </div>
             </div>
 
-            {/* Element Cards */}
-            <div className="mt-4">
-              <div className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
-                Element breakdown
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {(Object.keys(ELEMENTS) as ElKey[]).map((k) => {
-                  const el = ELEMENTS[k];
-                  const glow = pred.kind === "INVALID" ? "transparent" : pred.color;
-                  return (
-                    <div
-                      key={k}
-                      className="rounded-lg border bg-secondary/40 p-3 transition"
-                      style={{
-                        borderColor: pred.kind === "INVALID" ? "" : glow + "55",
-                        boxShadow: pred.kind === "INVALID" ? "none" : `0 0 14px -4px ${glow}55`,
-                      }}
-                    >
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-2xl font-bold" style={{ color: el.color }}>
-                          {k}
-                        </span>
-                        <span className="data-mono text-sm text-primary">
-                          {comp[k].toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="mt-1 space-y-0.5 text-[10px] text-muted-foreground data-mono">
-                        <div>EN: {el.en}</div>
-                        <div>r: {el.radius} pm</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </section>
 
           {/* PANEL 3 — VISUALIZATION + PRESETS */}
@@ -1350,30 +1342,36 @@ For research guidance only — experimental validation required.
 
           {/* XRD sits right next to the prediction so users see the diffraction
               signature of the phase without scrolling */}
-          <div className="lg:col-span-12">
+          <div className="lg:col-span-8">
             <XRDVisualizer phaseKind={pred.kind === "QC" || pred.kind === "DQC" ? "QC" : pred.kind === "APPROX" ? "APPROX" : "ORDINARY"} cntYield={pred.kind === "QC" ? 20 : 0} />
           </div>
+          <div className="hidden lg:block lg:col-span-12" />
 
           {/* Properties group — predicted material behavior */}
           <PropertiesPanel props={props} />
           <StabilityPanel data={stability} />
-          <TsaiRulesPanel comp={comp} desc={{ e_a: desc.e_a, delta: desc.delta }} />
+          
+              </TabsContent>
 
-          {/* Surface / CNT group — leaching feeds CNT growth, keep together */}
-          <LeachingPanel comp={comp} isQC={pred.kind === "QC"} naoh={naoh} setNaoh={setNaoh} />
-          <div className="lg:col-span-12">
-            <CNTPredictor comp={comp} />
+              <TabsContent value="cnt" className="mt-4">
+                <CNTGrowthTab comp={comp} />
+              </TabsContent>
+
+              <TabsContent value="doping" className="mt-4">
+                <DopingTab
+                  comp={comp}
+                  basePred={{ ea: desc.e_a, confidence: pred.confidence, label: pred.label, kind: pred.kind }}
+                  predictFromExt={predictFromExt}
+                />
+              </TabsContent>
+
+              <TabsContent value="ht" className="mt-4">
+                <HeatTreatmentTab comp={comp} />
+              </TabsContent>
+            </Tabs>
           </div>
 
-          {/* Exploration group — what-if tools */}
-          <DopantExplorer
-            currentComp={comp}
-            currentEa={desc.e_a}
-            currentPhase={pred.label}
-            currentConf={pred.confidence}
-            currentApi={props.antibacterial}
-            predictFromExt={predictFromExt}
-          />
+          {/* Comparison panel (full width, outside tabs) */}
           <div className="lg:col-span-12">
             <ComparisonPanel
               slots={slots}
@@ -1465,12 +1463,13 @@ For research guidance only — experimental validation required.
                     <th className="px-2 py-2 text-left">Predicted Phase</th>
                     <th className="px-2 py-2 text-right">Conf%</th>
                     <th className="px-2 py-2 text-left">Input Method</th>
+                    <th className="px-2 py-2 text-left">Tab</th>
                   </tr>
                 </thead>
                 <tbody className="data-mono">
                   {history.length === 0 && (
                     <tr>
-                      <td colSpan={10} className="px-2 py-6 text-center text-muted-foreground">
+                      <td colSpan={11} className="px-2 py-6 text-center text-muted-foreground">
                         Adjust composition or load a preset to begin logging predictions.
                       </td>
                     </tr>
@@ -1508,6 +1507,9 @@ For research guidance only — experimental validation required.
                           <td className="px-2 py-1.5 text-left text-muted-foreground font-sans">
                             {r.source === "Literature" ? "Reference Composition" : "User-Defined"}
                           </td>
+                          <td className="px-2 py-1.5 text-left text-muted-foreground font-sans uppercase text-[10px]">
+                            {r.tab === "qc" ? "QC" : r.tab === "cnt" ? "CNT" : r.tab === "doping" ? "Doping" : "HT"}
+                          </td>
                         </tr>
                       );
                     })}
@@ -1528,31 +1530,6 @@ For research guidance only — experimental validation required.
           {/* Export */}
           <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
 
-          {/* Heat treatment / phase evolution */}
-          <div className="lg:col-span-12">
-            <HeatTreatmentPanel comp={comp} predKind={pred.kind === "DQC" ? "QC" : pred.kind} />
-          </div>
-
-          {/* 600°C isothermal annealing data */}
-          <div className="lg:col-span-12">
-            <Annealing600CPanel />
-          </div>
-
-          {/* Co substitution phase map */}
-          <div className="lg:col-span-12">
-            <CoSubstitutionPanel />
-          </div>
-
-          {/* RAG knowledge base — chunks injected into AI Analysis */}
-          <div className="lg:col-span-12">
-            <KnowledgeBasePanel />
-          </div>
-
-          {/* Reference / literature group at bottom */}
-          <ReferenceDataset loadExternalComp={loadExternalComp} predictFromExt={predictFromExt} />
-
-          <MLDiscoveryPanel loadComp={loadExternalComp} />
-          <ReferencesPanel />
         </div>
 
 
