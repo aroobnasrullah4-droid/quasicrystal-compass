@@ -23,26 +23,17 @@ import {
   simulateLeaching,
   PropertiesPanel,
   StabilityPanel,
-  LeachingPanel,
   ComparisonPanel,
   ExportPanel,
   type Slot,
 } from "@/components/qc-modules";
-import {
-  MLDiscoveryPanel,
-  DopantExplorer,
-  TsaiRulesPanel,
-  QCTypeIndicator,
-  ReferencesPanel,
-} from "@/components/qc-extras";
-import { CNTPredictor } from "@/components/cnt-predictor";
+import { QCTypeIndicator } from "@/components/qc-extras";
 import { XRDVisualizer } from "@/components/xrd-visualizer";
 import { AIAnalysis } from "@/components/ai-analysis";
-import { ReferenceDataset } from "@/components/reference-dataset";
-import { HeatTreatmentPanel } from "@/components/heat-treatment";
-import { CoSubstitutionPanel } from "@/components/co-substitution";
-import { Annealing600CPanel } from "@/components/annealing-600c";
-import { KnowledgeBasePanel } from "@/components/knowledge-base";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { CNTGrowthTab } from "@/components/cnt-growth-tab";
+import { DopingTab } from "@/components/doping-tab";
+import { HeatTreatmentTab } from "@/components/heat-treatment-tab";
 
 export const Route = createFileRoute("/")({
   head: () => ({
