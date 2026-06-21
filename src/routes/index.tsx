@@ -1218,41 +1218,6 @@ For research guidance only — experimental validation required.
               </div>
             </div>
 
-            {/* Element Cards */}
-            <div className="mt-4">
-              <div className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
-                Element breakdown
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {(Object.keys(ELEMENTS) as ElKey[]).map((k) => {
-                  const el = ELEMENTS[k];
-                  const glow = pred.kind === "INVALID" ? "transparent" : pred.color;
-                  return (
-                    <div
-                      key={k}
-                      className="rounded-lg border bg-secondary/40 p-3 transition"
-                      style={{
-                        borderColor: pred.kind === "INVALID" ? "" : glow + "55",
-                        boxShadow: pred.kind === "INVALID" ? "none" : `0 0 14px -4px ${glow}55`,
-                      }}
-                    >
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-2xl font-bold" style={{ color: el.color }}>
-                          {k}
-                        </span>
-                        <span className="data-mono text-sm text-primary">
-                          {comp[k].toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="mt-1 space-y-0.5 text-[10px] text-muted-foreground data-mono">
-                        <div>EN: {el.en}</div>
-                        <div>r: {el.radius} pm</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </section>
 
           {/* PANEL 3 — VISUALIZATION + PRESETS */}
