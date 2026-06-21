@@ -1351,22 +1351,27 @@ For research guidance only — experimental validation required.
           <PropertiesPanel props={props} />
           <StabilityPanel data={stability} />
           <TsaiRulesPanel comp={comp} desc={{ e_a: desc.e_a, delta: desc.delta }} />
+              </TabsContent>
 
-          {/* Surface / CNT group — leaching feeds CNT growth, keep together */}
-          <LeachingPanel comp={comp} isQC={pred.kind === "QC"} naoh={naoh} setNaoh={setNaoh} />
-          <div className="lg:col-span-12">
-            <CNTPredictor comp={comp} />
+              <TabsContent value="cnt" className="mt-4">
+                <CNTGrowthTab comp={comp} />
+              </TabsContent>
+
+              <TabsContent value="doping" className="mt-4">
+                <DopingTab
+                  comp={comp}
+                  basePred={{ ea: desc.e_a, confidence: pred.confidence, label: pred.label, kind: pred.kind }}
+                  predictFromExt={predictFromExt}
+                />
+              </TabsContent>
+
+              <TabsContent value="ht" className="mt-4">
+                <HeatTreatmentTab comp={comp} />
+              </TabsContent>
+            </Tabs>
           </div>
 
-          {/* Exploration group — what-if tools */}
-          <DopantExplorer
-            currentComp={comp}
-            currentEa={desc.e_a}
-            currentPhase={pred.label}
-            currentConf={pred.confidence}
-            currentApi={props.antibacterial}
-            predictFromExt={predictFromExt}
-          />
+          {/* Comparison panel (full width, outside tabs) */}
           <div className="lg:col-span-12">
             <ComparisonPanel
               slots={slots}
