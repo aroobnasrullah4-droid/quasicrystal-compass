@@ -392,6 +392,8 @@ function autoNormalize(c: Comp): Comp {
 type Mode = "literature" | "explorer";
 type Source = "Literature" | "Manual";
 
+type TabKey = "qc" | "cnt" | "doping" | "ht";
+
 interface HistoryRow {
   id: number;
   comp: Comp;
@@ -399,6 +401,7 @@ interface HistoryRow {
   pred: Prediction;
   source: Source;
   ts: string;
+  tab: TabKey;
 }
 
 function QCPredictor() {
@@ -409,7 +412,8 @@ function QCPredictor() {
   const [showPresets, setShowPresets] = useState(true);
   const [showHistory, setShowHistory] = useState(true);
   const [historyFilter, setHistoryFilter] = useState<"ALL" | "QC" | "APPROX" | "ORDINARY">("ALL");
-  const [naoh, setNaoh] = useState(10);
+  const [activeTab, setActiveTab] = useState<TabKey>("qc");
+  const [naoh] = useState(10);
   const [slots, setSlots] = useState<(Slot | null)[]>([null, null, null]);
   const [loadedFrom, setLoadedFrom] = useState<string | null>("Tsai Classic");
   const [pulseKey, setPulseKey] = useState(0);
