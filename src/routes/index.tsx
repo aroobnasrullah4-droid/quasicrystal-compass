@@ -1350,7 +1350,7 @@ For research guidance only — experimental validation required.
           {/* Properties group — predicted material behavior */}
           <PropertiesPanel props={props} />
           <StabilityPanel data={stability} />
-          <TsaiRulesPanel comp={comp} desc={{ e_a: desc.e_a, delta: desc.delta }} />
+          
               </TabsContent>
 
               <TabsContent value="cnt" className="mt-4">
