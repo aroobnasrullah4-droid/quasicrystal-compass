@@ -29,7 +29,7 @@ import {
 } from "@/components/qc-modules";
 import { QCTypeIndicator } from "@/components/qc-extras";
 import { XRDVisualizer } from "@/components/xrd-visualizer";
-import { AIAnalysis } from "@/components/ai-analysis";
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CNTGrowthTab } from "@/components/cnt-growth-tab";
 import { DopingTab } from "@/components/doping-tab";
@@ -1217,16 +1217,6 @@ For research guidance only — experimental validation required.
               );
             })()}
 
-            {pred.kind !== "INVALID" && (
-              <AIAnalysis
-                comp={comp}
-                phase={pred.label}
-                confidence={pred.confidence}
-                e_a={desc.e_a}
-                stabilityPassed={stability.passed}
-                api={props.antibacterial}
-              />
-            )}
 
 
 
