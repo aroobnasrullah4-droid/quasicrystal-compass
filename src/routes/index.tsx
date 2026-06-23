@@ -29,7 +29,7 @@ import {
 } from "@/components/qc-modules";
 import { QCTypeIndicator } from "@/components/qc-extras";
 import { XRDVisualizer } from "@/components/xrd-visualizer";
-import { AIAnalysis } from "@/components/ai-analysis";
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { CNTGrowthTab } from "@/components/cnt-growth-tab";
 import { DopingTab } from "@/components/doping-tab";
