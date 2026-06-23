@@ -1217,16 +1217,6 @@ For research guidance only — experimental validation required.
               );
             })()}
 
-            {pred.kind !== "INVALID" && (
-              <AIAnalysis
-                comp={comp}
-                phase={pred.label}
-                confidence={pred.confidence}
-                e_a={desc.e_a}
-                stabilityPassed={stability.passed}
-                api={props.antibacterial}
-              />
-            )}
 
 
 
