@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.2",
+  "path": "/mcp",
+  "auth": {
+    "type": "none"
+  },
+  "mcp": {
+    "server": {
+      "name": "quasar-forge",
+      "version": "0.1.0",
+      "title": "Quasar Forge"
+    },
+    "tools": [
+      {
+        "name": "predict_qc_phase",
+        "title": "Predict quasicrystal phase",
+        "description": "Run the heuristic Al-Cu-Fe-Mn phase predictor on an alloy composition (at%). Returns the predicted phase class (icosahedral QC, decagonal QC, approximant, ordinary crystal), confidence, Hume-Rothery e/a ratio and other descriptors. Optional dopant and processing hints (Co, Cr, Ni, B, Si, Ag, Zn, milling hours, anneal temperature) refine the rules.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "Al": {
+              "type": "number",
+              "description": "Aluminum content in at%."
+            },
+            "Cu": {
+              "type": "number",
+              "description": "Copper content in at%."
+            },
+            "Fe": {
+              "type": "number",
+              "description": "Iron content in at%."
+            },
+            "Mn": {
+              "type": "number",
+              "default": 0,
+              "description": "Manganese content in at% (0 if absent)."
+            },
+            "Co": {
+              "type": "number",
+              "description": "Cobalt dopant at%; >=5 drives decagonal QC."
+            },
+            "Cr": {
+              "type": "number",
+              "description": "Chromium dopant at%; >=8 drives decagonal QC."
+            },
+            "Ni": {
+              "type": "number",
+              "description": "Nickel dopant at%; >4 destabilizes i-QC."
+            },
+            "B": {
+              "type": "number",
+              "description": "Boron dopant at%; 1-3 refines grains."
+            },
+            "Si": {
+              "type": "number",
+              "description": "Silicon dopant at%; <=2 boosts i-QC fraction."
+            },
+            "Ag": {
+              "type": "number",
+              "description": "Silver dopant at% substituting Cu."
+            },
+            "Zn": {
+              "type": "number",
+              "description": "Zinc dopant at% substituting Cu."
+            },
+            "millingHours": {
+              "type": "number",
+              "description": "Mechanical alloying time in hours."
+            },
+            "annealedAboveC": {
+              "type": "number",
+              "description": "Post-processing anneal temperature in °C."
+            },
+            "coolingRate": {
+              "type": "number",
+              "description": "Cooling rate in °C/s."
+            }
+          },
+          "required": [
+            "Al",
+            "Cu",
+            "Fe"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "search_qc_knowledge",
+        "title": "Search quasicrystal knowledge base",
+        "description": "Full-text search over the app's curated quasicrystal knowledge chunks (structure, Hume-Rothery rules, heat treatment, dopants, catalysis, XRD indexing, ML benchmarks). Returns matching chunks with id, title, tag and full body.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Search terms, e.g. 'peritectic 884' or 'decagonal cobalt'."
+            },
+            "limit": {
+              "type": "number",
+              "default": 5,
+              "description": "Maximum number of chunks to return."
+            }
+          },
+          "required": [
+            "query"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_qc_knowledge",
+        "title": "List quasicrystal knowledge chunks",
+        "description": "List every knowledge chunk in the app's quasicrystal knowledge base with id, tag, title and one-line summary. Use search_qc_knowledge or get_qc_knowledge_chunk to read full bodies.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tag": {
+              "type": "string",
+              "description": "Optional tag filter, e.g. STRUCTURE, DATASET, CONCEPT."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_qc_knowledge_chunk",
+        "title": "Get a quasicrystal knowledge chunk",
+        "description": "Fetch the full body of one quasicrystal knowledge chunk by its id.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "number",
+              "description": "Chunk id from list_qc_knowledge."
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
