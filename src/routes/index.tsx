@@ -35,19 +35,46 @@ import { CNTGrowthTab } from "@/components/cnt-growth-tab";
 import { DopingTab } from "@/components/doping-tab";
 import { HeatTreatmentTab } from "@/components/heat-treatment-tab";
 
+const SITE_URL = "https://quasicrystal-compass.lovable.app";
+const OG_IMAGE =
+  "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3b3ec96a-ba1e-4026-a2a3-934c87da9989/id-preview-94c0b2dc--ac6a93a3-21bd-4432-87b2-dc387c95ffab.lovable.app-1781500272820.png";
+const PAGE_TITLE = "QC Phase Predictor — Al-Cu-Fe-Mn Quasicrystal Tool";
+const PAGE_DESC =
+  "Predict quasicrystalline phase formation in Al-Cu-Fe-Mn alloys: e/a descriptors, ML prediction, CNT growth protocols and heat-treatment analysis.";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "QC Phase Predictor — Al-Cu-Fe-Mn Quasicrystal Tool" },
+      { title: PAGE_TITLE },
+      { name: "description", content: PAGE_DESC },
+      { property: "og:title", content: PAGE_TITLE },
+      { property: "og:description", content: PAGE_DESC },
+      { property: "og:url", content: SITE_URL + "/" },
+      { property: "og:image", content: OG_IMAGE },
+      { name: "twitter:title", content: PAGE_TITLE },
+      { name: "twitter:description", content: PAGE_DESC },
+      { name: "twitter:image", content: OG_IMAGE },
+    ],
+    links: [{ rel: "canonical", href: SITE_URL + "/" }],
+    scripts: [
       {
-        name: "description",
-        content:
-          "Computational tool for predicting quasicrystalline phase formation in Al-Cu-Fe-Mn quaternary alloy systems.",
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "QC Phase Predictor",
+          applicationCategory: "ResearchApplication",
+          operatingSystem: "Web browser",
+          url: SITE_URL + "/",
+          description: PAGE_DESC,
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        }),
       },
     ],
   }),
   component: QCPredictor,
 });
+
 
 import {
   ELEMENTS,
