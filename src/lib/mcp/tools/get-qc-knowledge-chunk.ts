@@ -13,7 +13,7 @@ export default defineTool({
     if (!chunk) throw new ToolError(`No knowledge chunk with id ${id}.`);
     return {
       content: [{ type: "text", text: `[#${chunk.id} ${chunk.tag} — ${chunk.title}]\n${chunk.body}` }],
-      structuredContent: chunk,
+      structuredContent: { ...chunk },
     };
   },
 });
