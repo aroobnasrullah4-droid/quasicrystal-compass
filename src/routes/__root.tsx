@@ -77,16 +77,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "QC Phase Predictor — Al-Cu-Fe-Mn Quasicrystal Tool" },
-      { name: "description", content: "Computational tool for predicting quasicrystalline phase formation in Al-Cu-Fe-Mn quaternary alloy systems." },
-      { property: "og:title", content: "QC Phase Predictor — Al-Cu-Fe-Mn Quasicrystal Tool" },
-      { property: "og:description", content: "Computational tool for predicting quasicrystalline phase formation in Al-Cu-Fe-Mn quaternary alloy systems." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "QC Phase Predictor — Al-Cu-Fe-Mn Quasicrystal Tool" },
-      { name: "twitter:description", content: "Computational tool for predicting quasicrystalline phase formation in Al-Cu-Fe-Mn quaternary alloy systems." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3b3ec96a-ba1e-4026-a2a3-934c87da9989/id-preview-94c0b2dc--ac6a93a3-21bd-4432-87b2-dc387c95ffab.lovable.app-1781500272820.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3b3ec96a-ba1e-4026-a2a3-934c87da9989/id-preview-94c0b2dc--ac6a93a3-21bd-4432-87b2-dc387c95ffab.lovable.app-1781500272820.png" },
+      { property: "og:site_name", content: "QC Phase Predictor" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -95,7 +88,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Organization",
+          name: "QC Phase Predictor",
+          url: "https://quasicrystal-compass.lovable.app",
+          description:
+            "Research tooling for quasicrystalline phase prediction in Al-Cu-Fe-Mn alloy systems.",
+        }),
+      },
+    ],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
