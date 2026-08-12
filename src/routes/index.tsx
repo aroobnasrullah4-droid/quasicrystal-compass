@@ -737,103 +737,21 @@ For research guidance only — experimental validation required.
           <section className="lg:col-span-5 rounded-xl border border-border bg-card p-5">
             <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 02</div>
             <h2 className="text-lg font-semibold">Phase Prediction</h2>
-            <p className="text-sm text-muted-foreground mb-4">Dual-engine: Heuristic + ML (HYPOD-X)</p>
+            <p className="text-sm text-muted-foreground mb-4">ML model (HYPOD-X Random Forest)</p>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* LEFT — Heuristic Engine */}
-              <div className="rounded-xl border border-border bg-secondary/20 p-3">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-secondary/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                    <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60" />
-                    Heuristic Engine
-                  </span>
-                </div>
-                <div
-                  key={pulseKey}
-                  className="rounded-xl border p-4 animate-scale-in"
-                  style={{
-                    borderColor: pred.color + "55",
-                    background: `linear-gradient(135deg, ${pred.color}14, transparent)`,
-                    boxShadow: pred.kind !== "INVALID" ? `0 0 24px -8px ${pred.color}55` : "none",
-                    transition: "box-shadow 300ms ease, border-color 300ms ease",
-                  }}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span
-                      className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold"
-                      style={{
-                        background: pred.color + "22",
-                        color: pred.color,
-                        border: `1px solid ${pred.color}44`,
-                      }}
-                    >
-                      <span className="text-base leading-none">{pred.icon}</span>
-                      {pred.kind === "QC"
-                        ? "QC POSITIVE"
-                        : pred.kind === "APPROX"
-                          ? "APPROXIMANT"
-                          : pred.kind === "ORDINARY"
-                            ? "NON-QC"
-                            : "INVALID INPUT"}
-                    </span>
-                    {loadedFrom && (
-                      <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                        Ref: {loadedFrom}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="mt-3 text-2xl font-bold flex items-center gap-2" style={{ color: pred.color }}>
-                    <span className="text-3xl">{pred.icon}</span>
-                    {pred.label}
-                  </h3>
-                  <p className="mt-2 text-xs text-muted-foreground">{pred.reasoning}</p>
-
-                  {pred.kind !== "INVALID" && (
-                    <div className="mt-4 flex items-center gap-4">
-                      <ArcGauge value={pred.confidence} color={pred.color} />
-                      <div className="flex-1">
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground">Confidence</div>
-                        <div className="data-mono text-xl font-bold" style={{ color: pred.color }}>
-                          {pred.confidence.toFixed(1)}%
-                        </div>
-                        <div className="mt-1 text-[11px] text-muted-foreground">
-                          e/a:{" "}
-                          <span
-                            className="data-mono"
-                            style={{
-                              color:
-                                desc.e_a >= 1.8 && desc.e_a <= 1.95
-                                  ? "#22C55E"
-                                  : desc.e_a >= 1.75 && desc.e_a <= 2.1
-                                    ? "#F59E0B"
-                                    : "#EF4444",
-                            }}
-                          >
-                            {desc.e_a.toFixed(3)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {pred.warning && (
-                    <div className="mt-3 rounded-md border px-3 py-2 text-[11px]" style={{ borderColor: "#F59E0B66", background: "#F59E0B14", color: "#F59E0B" }}>
-                      ⚠ {pred.warning}
-                    </div>
-                  )}
-
-                  {pred.kind === "QC" && <QCTypeIndicator />}
-                </div>
-              </div>
-
-              {/* RIGHT — ML Model */}
+            <div className="grid gap-4">
+              {/* ML Model */}
               <div className="rounded-xl border border-border bg-secondary/20 p-3">
                 <div className="mb-2 flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
                     <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                     ML Model (HYPOD-X Trained)
                   </span>
+                  {loadedFrom && (
+                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      Ref: {loadedFrom}
+                    </span>
+                  )}
                   {mlLoading && (
                     <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                       <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
@@ -921,39 +839,6 @@ For research guidance only — experimental validation required.
               </div>
             </div>
 
-            {/* Combined Verdict Banner */}
-            {pred.kind !== "INVALID" && mlResult && !mlError && (() => {
-              const heurQC = pred.kind === "QC";
-              const mlQC = mlResult.qc_probability >= 0.5;
-              if (heurQC && mlQC) {
-                return (
-                  <div
-                    className="mt-4 rounded-lg border px-4 py-3 text-sm font-semibold"
-                    style={{ borderColor: "#22C55E66", background: "#22C55E18", color: "#22C55E" }}
-                  >
-                    ✓ CONFIRMED QC-LIKELY — Both engines agree. Recommended for experimental synthesis.
-                  </div>
-                );
-              }
-              if (!heurQC && !mlQC) {
-                return (
-                  <div
-                    className="mt-4 rounded-lg border px-4 py-3 text-sm font-semibold"
-                    style={{ borderColor: "#EF444466", background: "#EF444418", color: "#EF4444" }}
-                  >
-                    ✗ CONFIRMED NON-QC — Both engines agree. Not recommended for synthesis.
-                  </div>
-                );
-              }
-              return (
-                <div
-                  className="mt-4 rounded-lg border px-4 py-3 text-sm font-semibold"
-                  style={{ borderColor: "#F59E0B66", background: "#F59E0B18", color: "#F59E0B" }}
-                >
-                  ⚠ UNCERTAIN — Models disagree. Experimental validation strongly recommended.
-                </div>
-              );
-            })()}
 
 
 
