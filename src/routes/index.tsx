@@ -1152,7 +1152,7 @@ For research guidance only — experimental validation required.
             QC Phase Predictor v2.0 | Based on HYPOD-X Database (Fujita et al., 2024) and Ali et al. (2025)
           </p>
           <p className="mt-1">
-            Dual-engine prediction: Heuristic rules (Tsai/Hume-Rothery) + Random Forest
+            ML-based phase prediction: HYPOD-X Random Forest model
             classifier trained on 9,286 real compositions from the HYPOD-X database
             (Fujita et al., 2024). GroupKFold validated — balanced accuracy 0.78.
           </p>
