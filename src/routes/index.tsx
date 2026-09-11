@@ -1,13 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import {
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  ResponsiveContainer,
-} from "recharts";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,29 +10,32 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
-  computeProperties,
-  computeStability,
-  simulateLeaching,
-  PropertiesPanel,
-  StabilityPanel,
-  ComparisonPanel,
-  ExportPanel,
-  type Slot,
-} from "@/components/qc-modules";
-import { QCTypeIndicator } from "@/components/qc-extras";
-import { XRDVisualizer } from "@/components/xrd-visualizer";
-
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { CNTGrowthTab } from "@/components/cnt-growth-tab";
-import { DopingTab } from "@/components/doping-tab";
-import { HeatTreatmentTab } from "@/components/heat-treatment-tab";
+  CompositionInput,
+  INITIAL_COMP,
+  entriesOf,
+  type CompState,
+} from "@/components/composition-input";
+import { PhasePrediction } from "@/components/phase-prediction";
+import { EAAnalysis } from "@/components/ea-analysis";
+import { StructureViewer } from "@/components/structure-viewer";
+import { XRDCard } from "@/components/xrd-card";
+import { PMRoute } from "@/components/pm-route";
+import {
+  computeEA,
+  derivePhaseDistribution,
+  dominantPhase,
+  formulaOf,
+  totalOf,
+  type Dist,
+  type PMInput,
+} from "@/lib/phase-core";
 
 const SITE_URL = "https://quasicrystal-compass.lovable.app";
 const OG_IMAGE =
   "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/3b3ec96a-ba1e-4026-a2a3-934c87da9989/id-preview-94c0b2dc--ac6a93a3-21bd-4432-87b2-dc387c95ffab.lovable.app-1781500272820.png";
-const PAGE_TITLE = "QC Phase Predictor — Al-Cu-Fe-Mn Quasicrystal Tool";
+const PAGE_TITLE = "QC Phase Predictor — Al-Cu-Fe Quasicrystal Tool";
 const PAGE_DESC =
-  "Predict quasicrystalline phase formation in Al-Cu-Fe-Mn alloys: e/a descriptors, ML prediction, CNT growth protocols and heat-treatment analysis.";
+  "Predict quasicrystalline phase formation in Al-Cu-Fe alloys: ML phase prediction, Hume-Rothery e/a analysis, cluster structure, simulated XRD and powder-metallurgy sintering guidance.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -49,8 +44,10 @@ export const Route = createFileRoute("/")({
       { name: "description", content: PAGE_DESC },
       { property: "og:title", content: PAGE_TITLE },
       { property: "og:description", content: PAGE_DESC },
+      { property: "og:type", content: "website" },
       { property: "og:url", content: SITE_URL + "/" },
       { property: "og:image", content: OG_IMAGE },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: PAGE_TITLE },
       { name: "twitter:description", content: PAGE_DESC },
       { name: "twitter:image", content: OG_IMAGE },
@@ -75,1157 +72,249 @@ export const Route = createFileRoute("/")({
   component: QCPredictor,
 });
 
+const API_URL = "https://aroobmunaam-qc-phase-predictor.hf.space/predict";
 
-import {
-  ELEMENTS,
-  EXT_ELEMENTS,
-  RANGES,
-  PRESETS,
-  computeDescriptors,
-  predict,
-  type ElKey,
-  type Comp,
-  type Preset,
-  type PredKind,
-  type Prediction,
-  type PredictHints,
-} from "@/lib/qc-engine";
+const PRESSURE_LABEL: Record<number, string> = {
+  200: "Low (200MPa)",
+  400: "Medium (400MPa)",
+  600: "High (600MPa)",
+};
 
-export { predict, computeDescriptors, EXT_ELEMENTS };
-export type { PredKind, PredictHints };
-
-
-
-// ============ NORMALIZATION (Explorer mode) ============
-function normalizeOnChange(prev: Comp, key: ElKey, newVal: number): Comp {
-  const [min, max] = RANGES[key];
-  newVal = Math.max(min, Math.min(max, newVal));
-  const others: ElKey[] = (Object.keys(prev) as ElKey[]).filter((k) => k !== key);
-  const remaining = 100 - newVal;
-  const othersSum = others.reduce((s, k) => s + prev[k], 0);
-  const next: Comp = { ...prev, [key]: newVal };
-  if (othersSum > 0) {
-    others.forEach((k) => {
-      const scaled = (prev[k] / othersSum) * remaining;
-      next[k] = Math.max(0, scaled);
-    });
-  }
-  const sum = next.Al + next.Cu + next.Fe + next.Mn;
-  const diff = 100 - sum;
-  if (Math.abs(diff) > 0.01) {
-    const sortable = others.sort((a, b) => next[b] - next[a]);
-    if (sortable[0]) next[sortable[0]] += diff;
-  }
-  return next;
+interface MLResult {
+  qc_probability: number;
+  prediction?: string;
+  predicted_phase?: string;
+  e_per_a?: number;
 }
-
-function autoNormalize(c: Comp): Comp {
-  const total = c.Al + c.Cu + c.Fe + c.Mn;
-  if (total <= 0) return c;
-  const f = 100 / total;
-  return { Al: c.Al * f, Cu: c.Cu * f, Fe: c.Fe * f, Mn: c.Mn * f };
-}
-
-// ============ COMPONENT ============
-type Mode = "literature" | "explorer";
-type Source = "Literature" | "Manual";
-
-type TabKey = "qc" | "cnt" | "doping" | "ht";
 
 interface HistoryRow {
   id: number;
-  comp: Comp;
-  e_a: number;
-  pred: Prediction;
-  source: Source;
+  formula: string;
+  ea: number;
+  phase: string;
+  confidence: number;
   ts: string;
-  tab: TabKey;
 }
 
 function QCPredictor() {
-  const [mode, setMode] = useState<Mode>("literature");
-  const [comp, setComp] = useState<Comp>({ Al: 65, Cu: 20, Fe: 10, Mn: 5 });
-  const [source, setSource] = useState<Source>("Literature");
+  const [comp, setComp] = useState<CompState>(INITIAL_COMP);
+  const [pm, setPm] = useState<PMInput>({
+    temp: 750,
+    time: 2,
+    pressure: 400,
+    atmosphere: "Argon",
+  });
+  const [ml, setMl] = useState<MLResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
-  const [showPresets, setShowPresets] = useState(true);
-  const [showHistory, setShowHistory] = useState(true);
-  const [historyFilter, setHistoryFilter] = useState<"ALL" | "QC" | "APPROX" | "ORDINARY">("ALL");
-  const [activeTab, setActiveTab] = useState<TabKey>("qc");
-  const [naoh] = useState(10);
-  const [slots, setSlots] = useState<(Slot | null)[]>([null, null, null]);
-  const [loadedFrom, setLoadedFrom] = useState<string | null>("Tsai Classic");
-  const [pulseKey, setPulseKey] = useState(0);
-  const [mlLoading, setMlLoading] = useState(false);
-  const [mlError, setMlError] = useState<string | null>(null);
-  const [mlResult, setMlResult] = useState<{
-    qc_probability: number;
-    prediction: string;
-    e_per_a: number;
-    top_features?: Record<string, unknown>;
-  } | null>(null);
+  const nextId = useRef(1);
 
-  // Auto-run ML prediction on composition change (debounced 800ms)
-  useEffect(() => {
-    const total = Number(comp.Al) + Number(comp.Cu) + Number(comp.Fe) + Number(comp.Mn);
-    if (total <= 0) return;
-    let cancelled = false;
-    const t = setTimeout(() => {
-      setMlLoading(true);
-      setMlError(null);
-      fetch("https://aroobmunaam-qc-phase-predictor.hf.space/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          composition: {
-            Al: Number(comp.Al),
-            Cu: Number(comp.Cu),
-            Fe: Number(comp.Fe),
-            Mn: Number(comp.Mn),
-          },
-        }),
-      })
-        .then((r) => {
-          if (!r.ok) throw new Error(`API ${r.status}`);
-          return r.json();
-        })
-        .then((d) => {
-          if (!cancelled) setMlResult(d);
-        })
-        .catch((e: any) => {
-          if (!cancelled) setMlError(e?.message ?? "Request failed");
-        })
-        .finally(() => {
-          if (!cancelled) setMlLoading(false);
-        });
-    }, 800);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [comp.Al, comp.Cu, comp.Fe, comp.Mn]);
-
-  const desc = useMemo(() => computeDescriptors(comp), [comp]);
-  const pred = useMemo(() => predict(comp, desc.e_a, desc.total), [comp, desc]);
-
-  const props = useMemo(() => computeProperties(comp, desc.e_a, pred.kind === "QC"), [comp, desc.e_a, pred.kind]);
-  const stability = useMemo(() => computeStability(comp, desc.e_a), [comp, desc.e_a]);
-  const leach = useMemo(() => simulateLeaching(comp, pred.kind === "QC", naoh), [comp, pred.kind, naoh]);
-
-  const currentSlot: Slot = useMemo(
-    () => ({
-      comp: { ...comp },
-      e_a: desc.e_a,
-      phase: pred.label,
-      confidence: pred.confidence,
-      hardness: props.hardness,
-      density: props.density,
-      antibacterial: props.antibacterial,
-      stabilityScore: stability.passed,
-      activeSites: leach.activeSites.cnt,
-    }),
-    [comp, desc.e_a, pred, props, stability, leach]
+  const entries = useMemo(() => entriesOf(comp), [comp]);
+  const ea = useMemo(() => computeEA(entries), [entries]);
+  const baseEa = useMemo(
+    () => computeEA(entries.filter((e) => ["Al", "Cu", "Fe"].includes(e.el))),
+    [entries]
   );
+  const dopant = useMemo(() => entries.find((e) => !["Al", "Cu", "Fe"].includes(e.el)) ?? null, [entries]);
 
-  const saveSlot = (idx: number) =>
-    setSlots((s) => {
-      const next = [...s];
-      next[idx] = currentSlot;
-      return next;
-    });
-  const clearSlot = (idx: number) =>
-    setSlots((s) => {
-      const next = [...s];
-      next[idx] = null;
-      return next;
-    });
+  const dist: Dist | null = useMemo(() => {
+    if (!ml) return null;
+    return derivePhaseDistribution(ml.qc_probability, ea, entries);
+  }, [ml, ea, entries]);
+  const dominant = dist ? dominantPhase(dist) : null;
 
-  // record to history (debounced)
+  const runPredict = useCallback(() => {
+    const list = entriesOf(comp);
+    if (totalOf(list) <= 0) return;
+    const composition: Record<string, number> = {};
+    list.forEach((e) => {
+      if (e.el) composition[e.el] = Number(e.amt);
+    });
+    setLoading(true);
+    setError(null);
+    fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        composition,
+        pm_conditions: {
+          sintering_temp: pm.temp,
+          sintering_time: pm.time,
+          pressure: PRESSURE_LABEL[pm.pressure],
+          atmosphere: pm.atmosphere,
+        },
+      }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error(`API error ${r.status}`);
+        return r.json();
+      })
+      .then((d: MLResult) => {
+        setMl(d);
+        const localEa = computeEA(list);
+        const dd = derivePhaseDistribution(d.qc_probability, localEa, list);
+        const dom = dominantPhase(dd);
+        setHistory((h) =>
+          [
+            {
+              id: nextId.current++,
+              formula: formulaOf(list),
+              ea: localEa,
+              phase: dom,
+              confidence: Math.max(0, Math.min(1, d.qc_probability)) * 100,
+              ts: new Date().toLocaleTimeString(),
+            },
+            ...h,
+          ].slice(0, 20)
+        );
+      })
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : "Request failed"))
+      .finally(() => setLoading(false));
+  }, [comp, pm]);
+
+  // Auto-run on composition / PM change (800ms debounce)
   useEffect(() => {
-    if (pred.kind === "INVALID") return;
-    const t = setTimeout(() => {
-      setHistory((h) => {
-        const last = h[h.length - 1];
-        if (
-          last &&
-          Math.abs(last.comp.Al - comp.Al) < 0.05 &&
-          Math.abs(last.comp.Cu - comp.Cu) < 0.05 &&
-          Math.abs(last.comp.Fe - comp.Fe) < 0.05 &&
-          Math.abs(last.comp.Mn - comp.Mn) < 0.05
-        )
-          return h;
-        return [
-          ...h,
-          {
-            id: (h[h.length - 1]?.id ?? 0) + 1,
-            comp: { ...comp },
-            e_a: desc.e_a,
-            pred,
-            source,
-            ts: new Date().toLocaleTimeString(),
-            tab: activeTab,
-          },
-        ].slice(-50);
-      });
-    }, 700);
+    const t = setTimeout(runPredict, 800);
     return () => clearTimeout(t);
-  }, [comp, desc.e_a, pred, source]);
-
-  const handleSlider = (k: ElKey, v: number) => {
-    setComp((p) => normalizeOnChange(p, k, v));
-    setLoadedFrom(null);
-  };
-  const handleNumber = (k: ElKey, v: number) => {
-    setComp((p) => ({ ...p, [k]: isNaN(v) ? 0 : Math.max(0, v) }));
-    setSource("Manual");
-    setLoadedFrom(null);
-  };
-
-  const loadPreset = (p: Preset) => {
-    setComp({ ...p.comp });
-    setMode("literature");
-    setSource("Literature");
-    setLoadedFrom(p.label);
-  };
-
-  const resetComp = () => {
-    setComp({ Al: 65, Cu: 20, Fe: 10, Mn: 5 });
-    setSource("Literature");
-    setLoadedFrom("Tsai Classic");
-  };
-
-  const reloadFromHistory = (r: HistoryRow) => {
-    setComp({ ...r.comp });
-    setSource(r.source);
-    setLoadedFrom(null);
-  };
-
-  const loadExternalComp = (c: Comp, label: string) => {
-    setComp({ ...c });
-    setMode("literature");
-    setSource("Literature");
-    setLoadedFrom(label);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const predictFromExt = (c: Comp, hints: PredictHints = {}) => {
-    const d = computeDescriptors(c);
-    const p = predict(c, d.e_a, d.total, hints);
-    const pr = computeProperties(c, d.e_a, p.kind === "QC" || p.kind === "DQC");
-    return {
-      label: p.label,
-      confidence: p.confidence,
-      color: p.color,
-      kind: p.kind,
-      ea: d.e_a,
-      api: pr.antibacterial,
-    };
-  };
-
-  // Pulse on prediction change
-  useEffect(() => {
-    setPulseKey((k) => k + 1);
-  }, [pred.kind, pred.label]);
-
-
-  const exportCSV = () => {
-    const header = "#,Al,Cu,Fe,Mn,Total,e/a,Phase,Confidence,Source,Time\n";
-    const rows = history
-      .map(
-        (r) =>
-          `${r.id},${r.comp.Al.toFixed(2)},${r.comp.Cu.toFixed(2)},${r.comp.Fe.toFixed(2)},${r.comp.Mn.toFixed(2)},${(r.comp.Al + r.comp.Cu + r.comp.Fe + r.comp.Mn).toFixed(2)},${r.e_a.toFixed(3)},${r.pred.label},${r.pred.confidence.toFixed(1)},${r.source},${r.ts}`
-      )
-      .join("\n");
-    const blob = new Blob([header + rows], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `qc_session_${Date.now()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-
-
-
-  const bestQC = useMemo(() => {
-    const qcs = history.filter((r) => r.pred.kind === "QC");
-    if (!qcs.length) return null;
-    return qcs.reduce((a, b) => (b.pred.confidence > a.pred.confidence ? b : a));
-  }, [history]);
-
-  const radarData = [
-    { axis: "Al", value: comp.Al, ref: 65 },
-    { axis: "Cu", value: comp.Cu, ref: 15 },
-    { axis: "Fe", value: comp.Fe, ref: 12 },
-    { axis: "Mn", value: comp.Mn, ref: 4 },
-  ];
-
-  const totalDiff = Math.abs(desc.total - 100);
-  const totalBadge =
-    totalDiff < 0.1
-      ? { color: "#22C55E", text: `✓ ${desc.total.toFixed(1)}%`, bg: "rgba(34,197,94,0.1)" }
-      : totalDiff <= 2
-        ? { color: "#F59E0B", text: `⚠ ${desc.total.toFixed(1)}% — normalize?`, bg: "rgba(245,158,11,0.1)" }
-        : { color: "#EF4444", text: `✗ ${desc.total.toFixed(1)}% — invalid`, bg: "rgba(239,68,68,0.1)" };
-
-  const bibtex = `@software{QCPhasePredictor2025,
-  title  = {QC Phase Predictor: A Computational Tool for Quasicrystalline Phase Prediction in Al-Cu-Fe-Mn Systems},
-  author = {[Author] and Ali, F.},
-  year   = {2025},
-  note   = {Research Tool v2.0. Based on HYPOD-X database and established QC formation criteria.},
-  url    = {${typeof window !== "undefined" ? window.location.origin : ""}}
-}`;
-
-  const pythonDict = (() => {
-    const arr = history.map((r) => ({
-      Al: +r.comp.Al.toFixed(2),
-      Cu: +r.comp.Cu.toFixed(2),
-      Fe: +r.comp.Fe.toFixed(2),
-      Mn: +r.comp.Mn.toFixed(2),
-      e_a: +r.e_a.toFixed(3),
-      phase: r.pred.kind,
-      confidence: +r.pred.confidence.toFixed(1),
-      source: r.source,
-    }));
-    return `# QC Phase Predictor — session export\ncompositions = ${JSON.stringify(arr, null, 2)}\n\nimport pandas as pd\ndf = pd.DataFrame(compositions)\nprint(df.head())`;
-  })();
-
-  const buildReportHTML = () => {
-    const ts = new Date().toLocaleString();
-    const ruleRows = stability.rules
-      .map(
-        (r) =>
-          `<tr><td>${r.label}</td><td style="color:${r.status === "pass" ? "#16a34a" : r.status === "warn" ? "#d97706" : "#dc2626"}">${r.status.toUpperCase()}</td><td>${r.detail}</td></tr>`
-      )
-      .join("");
-    return `<!doctype html><html><head><meta charset="utf-8"><title>QC Phase Predictor Report</title>
-<style>
-body{font-family:-apple-system,Inter,Arial,sans-serif;color:#0f172a;padding:32px;max-width:780px;margin:auto;}
-h1{color:#0369a1;margin:0 0 4px;font-size:22px;}
-h2{color:#0369a1;font-size:14px;margin:20px 0 6px;border-bottom:1px solid #e2e8f0;padding-bottom:4px;text-transform:uppercase;letter-spacing:0.06em;}
-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px;}
-td,th{border:1px solid #e2e8f0;padding:6px 8px;text-align:left;}
-th{background:#f1f5f9;}
-.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
-.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:600;}
-.footer{margin-top:24px;font-size:10px;color:#64748b;border-top:1px solid #e2e8f0;padding-top:8px;}
-</style></head><body>
-<h1>QC Phase Predictor — Analysis Report</h1>
-<div style="font-size:11px;color:#64748b;">Computational Prediction for Al-Cu-Fe-Mn Quasicrystalline Systems<br/>Generated: ${ts} · Tool Version: v2.0</div>
-
-<h2>Composition (at%)</h2>
-<table><tr><th>Al</th><th>Cu</th><th>Fe</th><th>Mn</th><th>Total</th></tr>
-<tr class="mono"><td>${comp.Al.toFixed(2)}</td><td>${comp.Cu.toFixed(2)}</td><td>${comp.Fe.toFixed(2)}</td><td>${comp.Mn.toFixed(2)}</td><td>${desc.total.toFixed(2)}</td></tr></table>
-
-<h2>Predicted Phase</h2>
-<p><span class="badge" style="background:${pred.color}22;color:${pred.color};border:1px solid ${pred.color}55;">${pred.label}</span>
-&nbsp;Confidence: <span class="mono">${pred.confidence.toFixed(1)}%</span></p>
-<p style="font-size:12px;color:#475569;">${pred.reasoning}</p>
-
-<h2>Estimated Properties</h2>
-<table class="mono">
-<tr><td>Hardness (HV)</td><td>${props.hardness.toFixed(0)}</td></tr>
-<tr><td>Density (g/cm³)</td><td>${props.density.toFixed(2)}</td></tr>
-<tr><td>Melting Point (°C)</td><td>${props.meltingPoint.toFixed(0)}</td></tr>
-<tr><td>Thermal Conductivity (W/mK)</td><td>${props.thermalConductivity.toFixed(0)}</td></tr>
-<tr><td>e/a ratio</td><td>${desc.e_a.toFixed(3)}</td></tr>
-<tr><td>VEC</td><td>${desc.vec.toFixed(3)}</td></tr>
-<tr><td>Avg. EN</td><td>${desc.en.toFixed(3)}</td></tr>
-<tr><td>Avg. radius (pm)</td><td>${desc.radius.toFixed(1)}</td></tr>
-<tr><td>Wear Index /10</td><td>${props.wearIndex.toFixed(1)}</td></tr>
-<tr><td>Antibacterial Index /10</td><td>${props.antibacterial.toFixed(1)}</td></tr>
-<tr><td>Electrical Resistivity</td><td>${props.resistivityTendency}</td></tr>
-</table>
-
-<h2>Phase Stability Rules (${stability.passed}/4 passed)</h2>
-<table><tr><th>Rule</th><th>Status</th><th>Detail</th></tr>${ruleRows}</table>
-
-<h2>Leaching Simulation (${naoh}M NaOH)</h2>
-<table class="mono"><tr><th></th><th>Al</th><th>Cu</th><th>Fe</th><th>Mn</th></tr>
-<tr><td>Before</td><td>${leach.before.Al.toFixed(1)}</td><td>${leach.before.Cu.toFixed(1)}</td><td>${leach.before.Fe.toFixed(1)}</td><td>${leach.before.Mn.toFixed(1)}</td></tr>
-<tr><td>After (surface)</td><td>${leach.after.Al.toFixed(1)}</td><td>${leach.after.Cu.toFixed(1)}</td><td>${leach.after.Fe.toFixed(1)}</td><td>${leach.after.Mn.toFixed(1)}</td></tr></table>
-<p style="font-size:12px;"><b>${leach.activeSites.label}</b><br/>Expected CNT diameter: ${leach.cntRange}</p>
-
-<div class="footer">
-QC Phase Predictor v2.0 · Based on HYPOD-X Database (Fujita et al., 2024) and Ali et al. (2025)<br/>
-For research guidance only — experimental validation required.
-</div>
-</body></html>`;
-  };
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (!(e.ctrlKey || e.metaKey)) return;
-      const k = e.key.toLowerCase();
-      if (k === "l") {
-        e.preventDefault();
-        const allPresets = PRESETS.flatMap((g) => g.items);
-        const idx = allPresets.findIndex((p) => p.label === loadedFrom);
-        const next = allPresets[(idx + 1) % allPresets.length];
-        if (next) loadPreset(next);
-      } else if (k === "n") {
-        e.preventDefault();
-        setComp(autoNormalize(comp));
-      } else if (k === "e") {
-        e.preventDefault();
-        exportCSV();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comp, loadedFrom]);
+  }, [comp, pm]);
+
+  const confidence = ml ? Math.max(0, Math.min(1, ml.qc_probability)) * 100 : null;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* HEADER */}
       <header className="penrose-bg border-b border-border">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3">
-                <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/30">
-                  <svg viewBox="0 0 24 24" className="h-6 w-6 text-primary" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <polygon points="12,2 14.6,9.5 22,9.5 16,14 18.5,21.5 12,17 5.5,21.5 8,14 2,9.5 9.4,9.5" />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight">QC Phase Predictor</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Computational Tool for Quasicrystalline Phase Prediction in Al-Cu-Fe-Mn Systems
-                  </p>
-                </div>
+            <div className="flex items-center gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-lg bg-primary/10 ring-1 ring-primary/30">
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-6 w-6 text-primary"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                >
+                  <polygon points="12,2 14.6,9.5 22,9.5 16,14 18.5,21.5 12,17 5.5,21.5 8,14 2,9.5 9.4,9.5" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">QC Phase Predictor</h1>
+                <p className="text-sm text-muted-foreground">
+                  Computational Tool for Quasicrystalline Phase Prediction in Al-Cu-Fe Systems
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span
-                className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-[10px] font-mono text-sky-300"
-                title="Research preview build"
-              >
-                v2.0 | Research Preview
+              <span className="rounded-full border border-sky-500/40 bg-sky-500/10 px-2 py-1 text-[10px] font-mono text-sky-300">
+                v3.0 | ML LIVE
               </span>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="border-border bg-secondary hover:bg-secondary/80">
-                  ℹ️ About
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-card border-border max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>QC Phase Predictor v2.0</DialogTitle>
-                  <DialogDescription className="text-muted-foreground pt-2 space-y-3 text-sm">
-                    <span className="block">
-                      A computational research tool for predicting quasicrystalline phase
-                      formation in Al-Cu-Fe-Mn quaternary alloy systems.
-                    </span>
-                    <span className="block">
-                      <strong className="text-foreground">Scientific Basis:</strong>
-                      <ul className="ml-4 mt-1 list-disc space-y-0.5">
-                        <li>Hume-Rothery electron concentration rules</li>
-                        <li>Tsai's five QC formation criteria</li>
-                        <li>HYPOD-X compositional database (Fujita et al., 2024)</li>
-                        <li>Ali et al. (2025) — AlCuFeMn QC + CNT catalytic growth and antibacterial activity</li>
-                        <li>Liu et al. (2021) — ML prediction of QC phases from composition</li>
-                        <li>Uryu et al. (2023) — Three new QCs predicted and confirmed by ML</li>
-                      </ul>
-                    </span>
-                    <span className="block">
-                      <strong className="text-foreground">Development Roadmap:</strong>
-                      <ul className="ml-4 mt-1 list-disc space-y-0.5">
-                        <li>v1.0 — Rule-based heuristic engine ✓</li>
-                        <li>v2.0 — Extended modules: XRD, leaching, CNT, AI analysis ✓</li>
-                        <li>v3.0 — Random Forest model trained on HYPOD-X database ✓ LIVE</li>
-                        <li>v4.0 — Experimental validation integration (in progress)</li>
-                      </ul>
-                    </span>
-                    <span className="block italic">
-                      Disclaimer: This tool provides computational estimates for research
-                      guidance. All predictions require experimental validation. Property
-                      estimates use linear mixing rules and do not account for quasiperiodic
-                      structural anomalies.
-                    </span>
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="border-border bg-secondary hover:bg-secondary/80">
+                    About
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg border-border bg-card">
+                  <DialogHeader>
+                    <DialogTitle>QC Phase Predictor v3.0</DialogTitle>
+                    <DialogDescription className="space-y-3 pt-2 text-sm text-muted-foreground">
+                      <span className="block">
+                        A research tool for predicting quasicrystalline phase formation in
+                        Al-Cu-Fe based alloys, powered by the HYPOD-X machine-learning model.
+                      </span>
+                      <span className="block">
+                        <strong className="text-foreground">Scientific basis:</strong> Hume-Rothery
+                        electron concentration (Raynor valences), Tsai QC formation criteria, and
+                        published Al-Cu-Fe reference diffraction patterns.
+                      </span>
+                      <span className="block italic">
+                        Predictions are computational estimates and require experimental validation
+                        by XRD, SEM/EDX and DTA.
+                      </span>
+                    </DialogDescription>
+                  </DialogHeader>
+                </DialogContent>
+              </Dialog>
             </div>
-
           </div>
         </div>
       </header>
 
-
-
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-          {/* PANEL 1 — COMPOSITION INPUT */}
-          <section className="lg:col-span-4 rounded-xl border border-border bg-card p-5">
-            <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 01</div>
-            <h2 className="text-lg font-semibold">Alloy Composition Input</h2>
-            <p className="text-sm text-muted-foreground mb-4">Al-Cu-Fe-Mn Quaternary System</p>
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+          <CompositionInput state={comp} setState={setComp} onPredict={runPredict} loading={loading} />
+          <PhasePrediction
+            dist={dist}
+            confidence={confidence}
+            loading={loading}
+            error={error}
+            dopant={dopant}
+            mlLabel={ml?.predicted_phase ?? ml?.prediction ?? null}
+          />
+          <EAAnalysis ea={ea} baseEa={baseEa} dopant={dopant} loading={loading} />
+          <StructureViewer
+            entries={entries}
+            dominant={dominant}
+            dist={dist}
+            dopant={dopant}
+            loading={loading}
+          />
+          <XRDCard dominant={dominant} loading={loading} />
+          <PMRoute pm={pm} setPm={setPm} ea={ea} loading={loading} />
+        </div>
 
-            {/* Mode toggle */}
-            <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-secondary/40 p-1">
-              <button
-                onClick={() => setMode("literature")}
-                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                  mode === "literature"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Literature Mode
-              </button>
-              <button
-                onClick={() => setMode("explorer")}
-                className={`flex-1 rounded-md px-3 py-1.5 text-xs font-semibold transition ${
-                  mode === "explorer"
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                Explorer Mode
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {(Object.keys(ELEMENTS) as ElKey[]).map((k) => {
-                const [min, max] = RANGES[k];
-                const el = ELEMENTS[k];
-                const QC_OPT: Record<ElKey, [number, number]> = {
-                  Al: [62, 72],
-                  Cu: [10, 20],
-                  Fe: [10, 15],
-                  Mn: [2, 6],
-                };
-                const [lo, hi] = QC_OPT[k];
-                const v = comp[k];
-                const dist = v < lo ? lo - v : v > hi ? v - hi : 0;
-                const borderColor = dist === 0 ? "#22C55E" : dist <= 2 ? "#F59E0B" : "#EF4444";
-                const hint = `Typical QC range: ${lo}–${hi} at%`;
-                return (
-                  <div key={k}>
-                    <div className="mb-1 flex items-center justify-between">
-                      <label className="text-sm font-medium">
-                        <span style={{ color: el.color }}>{k}</span>{" "}
-                        <span className="text-muted-foreground">— {el.name}</span>
-                      </label>
-                      <span className="data-mono text-[10px]" style={{ color: borderColor }}>
-                        {dist === 0 ? "✓ optimal" : dist <= 2 ? "⚠ near" : "✗ outside"}
-                      </span>
-                    </div>
-                    {mode === "literature" ? (
-                      <input
-                        type="number"
-                        step={0.1}
-                        value={Number(comp[k].toFixed(2))}
-                        onChange={(e) => handleNumber(k, parseFloat(e.target.value))}
-                        className="w-full rounded-md border bg-secondary/40 px-3 py-1.5 data-mono text-sm text-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors"
-                        style={{ borderColor: borderColor + "88" }}
-                      />
-                    ) : (
-                      <>
-                        <input
-                          type="range"
-                          min={min}
-                          max={max}
-                          step={0.1}
-                          value={comp[k]}
-                          onChange={(e) => handleSlider(k, parseFloat(e.target.value))}
-                          className="w-full accent-primary"
-                          style={{ accentColor: borderColor }}
-                        />
-                        <div className="flex justify-between data-mono text-[10px] text-muted-foreground">
-                          <span>{min}</span>
-                          <span style={{ color: borderColor }}>{comp[k].toFixed(1)} at%</span>
-                          <span>{max}</span>
-                        </div>
-                      </>
-                    )}
-                    <div className="data-mono text-[9px] text-muted-foreground/80 mt-0.5">{hint}</div>
-                  </div>
-                );
-              })}
-            </div>
-
-
-            {/* Total badge */}
-            <div
-              className="mt-4 flex items-center justify-between rounded-lg border px-3 py-2 text-sm data-mono"
-              style={{
-                borderColor: totalBadge.color + "55",
-                background: totalBadge.bg,
-                color: totalBadge.color,
-              }}
-            >
-              <span>Total</span>
-              <span>{totalBadge.text}</span>
-            </div>
-
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {totalDiff >= 0.1 ? (
-                <button
-                  onClick={() => {
-                    setComp(autoNormalize(comp));
-                    setSource("Manual");
-                  }}
-                  className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20"
-                >
-                  Auto-normalize
-                </button>
-              ) : (
-                <div />
-              )}
-              <button
-                onClick={resetComp}
-                className="rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-secondary/70 hover:text-foreground"
-              >
-                Reset
-              </button>
-            </div>
-
-
-            {/* Descriptors */}
-            <div className="mt-5">
-              <div className="mb-2 text-xs uppercase tracking-wider text-muted-foreground">
-                Derived descriptors
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <DescCard label="e/a ratio" value={desc.e_a.toFixed(3)} hint="Target 1.86" />
-                <DescCard label="VEC" value={desc.vec.toFixed(3)} hint="Valence e⁻ conc." />
-                <DescCard label="Avg. EN" value={desc.en.toFixed(3)} hint="Pauling" />
-                <DescCard label="Avg. radius" value={`${desc.radius.toFixed(1)}`} hint="pm" />
-                <DescCard label="δ (size mismatch)" value={`${desc.delta.toFixed(2)}%`} hint="Low δ → solid sol." />
-                <DescCard label="ΔS_mix" value={desc.entropy.toFixed(2)} hint="J/mol·K" />
-              </div>
-            </div>
-          </section>
-
-          {/* TABS WRAPPER (right column on desktop, below composition on mobile) */}
-          <div className="lg:col-span-8">
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabKey)}>
-              <TabsList className="flex h-auto w-full flex-wrap justify-start gap-1 rounded-lg bg-secondary/40 p-1">
-                <TabsTrigger value="qc" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  QC Prediction
-                  <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-mono text-emerald-400">
-                    ● ML Connected
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger value="cnt" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  CNT Growth
-                  <span className="rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-mono text-sky-400">
-                    Literature Model
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger value="doping" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  Doping Effects
-                  <span className="rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-mono text-sky-400">
-                    Literature Model
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger value="ht" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  Heat Treatment
-                  <span className="rounded-full bg-sky-500/20 px-1.5 py-0.5 text-[9px] font-mono text-sky-400">
-                    Literature Model
-                  </span>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="qc" className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-8">
-          {/* PANEL 2 — PREDICTION */}
-          <section className="lg:col-span-5 rounded-xl border border-border bg-card p-5">
-            <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 02</div>
-            <h2 className="text-lg font-semibold">Phase Prediction</h2>
-            <p className="text-sm text-muted-foreground mb-4">ML model (HYPOD-X Random Forest)</p>
-
-            <div className="grid gap-4">
-              {/* ML Model */}
-              <div className="rounded-xl border border-border bg-secondary/20 p-3">
-                <div className="mb-2 flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                    ML Model (HYPOD-X Trained)
-                  </span>
-                  {loadedFrom && (
-                    <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-                      Ref: {loadedFrom}
-                    </span>
-                  )}
-                  {mlLoading && (
-                    <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
-                      <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
-                      predicting…
-                    </span>
-                  )}
-                </div>
-
-                {mlError && (
-                  <div
-                    className="rounded-md border px-3 py-2 text-xs"
-                    style={{ borderColor: "#EF444466", background: "#EF444414", color: "#EF4444" }}
-                  >
-                    ⚠ {mlError}
-                  </div>
-                )}
-
-                {!mlResult && !mlError && (
-                  <div className="rounded-xl border border-border bg-card p-4 text-xs text-muted-foreground">
-                    {mlLoading ? "Calling Random Forest model…" : "Adjust composition to run ML prediction."}
-                  </div>
-                )}
-
-                {mlResult && !mlError && (
-                  <div
-                    className="rounded-xl border p-4"
-                    style={{
-                      borderColor: (mlResult.qc_probability >= 0.5 ? "#22C55E" : "#EF4444") + "55",
-                      background: `linear-gradient(135deg, ${mlResult.qc_probability >= 0.5 ? "#22C55E" : "#EF4444"}14, transparent)`,
-                    }}
-                  >
-                    <div className="flex items-baseline justify-between gap-2">
-                      <div>
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">QC Probability</div>
-                        <div
-                          className="data-mono text-4xl font-bold"
-                          style={{ color: mlResult.qc_probability >= 0.5 ? "#22C55E" : "#EF4444" }}
-                        >
-                          {(mlResult.qc_probability * 100).toFixed(1)}%
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Prediction</div>
-                        <div
-                          className="data-mono text-sm font-bold"
-                          style={{
-                            color: mlResult.prediction?.toLowerCase().includes("non")
-                              ? "#EF4444"
-                              : "#22C55E",
-                          }}
-                        >
-                          {mlResult.prediction}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2">
-                      <span className="text-[10px] uppercase tracking-wider text-muted-foreground">e/a ratio</span>
-                      <span className="data-mono text-base font-semibold text-foreground">
-                        {mlResult.e_per_a.toFixed(3)}
-                      </span>
-                    </div>
-
-                    {mlResult.top_features && Object.keys(mlResult.top_features).length > 0 && (
-                      <div className="mt-3 border-t border-border/60 pt-2">
-                        <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                          Top 3 Features
-                        </div>
-                        <ul className="space-y-1">
-                          {Object.entries(mlResult.top_features)
-                            .slice(0, 3)
-                            .map(([k, v]) => (
-                              <li key={k} className="flex justify-between text-[11px]">
-                                <span className="text-muted-foreground">{k}</span>
-                                <span className="data-mono text-foreground">
-                                  {typeof v === "number" ? (v as number).toFixed(3) : String(v)}
-                                </span>
-                              </li>
-                            ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-
-
-
-
-            {/* Hume-Rothery gauge */}
-            <div className="mt-5 rounded-lg border border-border bg-secondary/30 p-4">
-              <div className="mb-2 flex items-center justify-between">
-                <span className="text-sm font-medium">Hume-Rothery e/a Stability Window</span>
-                <span className="data-mono text-sm text-primary">e/a = {desc.e_a.toFixed(3)}</span>
-              </div>
-              <HumeRotheryBar value={desc.e_a} />
-              <div className="mt-2 flex justify-between data-mono text-[10px] text-muted-foreground">
-                <span>1.50</span>
-                <span>1.75</span>
-                <span className="text-qc-positive">1.86★</span>
-                <span>2.10</span>
-                <span>2.30</span>
-              </div>
-              <div className="mt-2 text-[11px] text-muted-foreground">
-                Ideal icosahedral QC: e/a ≈ 1.86
-              </div>
-            </div>
-
-          </section>
-
-          {/* PANEL 3 — VISUALIZATION + PRESETS */}
-          <section className="lg:col-span-3 space-y-4">
-            <div className="rounded-xl border border-border bg-card p-4">
-              <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 03</div>
-              <h2 className="text-sm font-semibold mb-2">Composition Radar</h2>
-              <div className="h-52">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={radarData} outerRadius="75%">
-                    <PolarGrid stroke="#1E293B" />
-                    <PolarAngleAxis dataKey="axis" tick={{ fill: "#94a3b8", fontSize: 11 }} />
-                    <PolarRadiusAxis tick={false} axisLine={false} />
-                    <Radar
-                      name="QC zone"
-                      dataKey="ref"
-                      stroke="#38BDF8"
-                      fill="#38BDF8"
-                      fillOpacity={0.1}
-                      strokeDasharray="3 3"
-                    />
-                    <Radar
-                      name="Composition"
-                      dataKey="value"
-                      stroke={pred.color}
-                      fill={pred.color}
-                      fillOpacity={0.35}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            {/* PRESETS */}
-            <div className="rounded-xl border border-border bg-card">
-              <button
-                onClick={() => setShowPresets((s) => !s)}
-                className="flex w-full items-center justify-between p-4 text-left"
-              >
-                <div>
-                  <div className="text-xs uppercase tracking-wider text-primary">Presets</div>
-                  <h2 className="text-sm font-semibold">Known Literature Compositions</h2>
-                </div>
-                <span className="text-muted-foreground">{showPresets ? "▾" : "▸"}</span>
-              </button>
-              {showPresets && (
-                <div className="space-y-3 px-4 pb-4">
-                  {PRESETS.map((group) => {
-                    const c =
-                      group.category === "QC"
-                        ? "#22C55E"
-                        : group.category === "APPROX"
-                          ? "#F59E0B"
-                          : "#EF4444";
-                    return (
-                      <div key={group.category}>
-                        <div
-                          className="mb-1 text-[11px] font-semibold uppercase tracking-wider"
-                          style={{ color: c }}
-                        >
-                          {group.title}
-                        </div>
-                        <div className="space-y-1">
-                          {group.items.map((p) => (
-                            <div
-                              key={p.label}
-                              className="flex items-center justify-between rounded-md border border-border bg-secondary/40 px-2 py-1.5"
-                            >
-                              <div className="min-w-0 flex-1">
-                                <div className="truncate text-xs font-medium">{p.label}</div>
-                                <div className="data-mono text-[10px] text-muted-foreground">
-                                  Al{p.comp.Al} Cu{p.comp.Cu} Fe{p.comp.Fe} Mn{p.comp.Mn}
-                                </div>
-                              </div>
-                              <button
-                                onClick={() => loadPreset(p)}
-                                className="rounded border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary hover:bg-primary/20"
-                              >
-                                Load
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* XRD sits right next to the prediction so users see the diffraction
-              signature of the phase without scrolling */}
-          <div className="lg:col-span-8">
-            <XRDVisualizer phaseKind={pred.kind === "QC" || pred.kind === "DQC" ? "QC" : pred.kind === "APPROX" ? "APPROX" : "ORDINARY"} cntYield={pred.kind === "QC" ? 20 : 0} />
+        <section className="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold tracking-tight">
+              Session History ({history.length})
+            </h2>
+            {history.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => setHistory([])}>
+                Clear
+              </Button>
+            )}
           </div>
-          <div className="hidden lg:block lg:col-span-12" />
-
-          {/* Properties group — predicted material behavior */}
-          <PropertiesPanel props={props} />
-          <StabilityPanel data={stability} />
-          
-              </TabsContent>
-
-              <TabsContent value="cnt" className="mt-4">
-                <CNTGrowthTab comp={comp} />
-              </TabsContent>
-
-              <TabsContent value="doping" className="mt-4">
-                <DopingTab
-                  comp={comp}
-                  basePred={{ ea: desc.e_a, confidence: pred.confidence, label: pred.label, kind: pred.kind }}
-                  predictFromExt={predictFromExt}
-                />
-              </TabsContent>
-
-              <TabsContent value="ht" className="mt-4">
-                <HeatTreatmentTab comp={comp} />
-              </TabsContent>
-            </Tabs>
-          </div>
-
-          {/* Comparison panel (full width, outside tabs) */}
-          <div className="lg:col-span-12">
-            <ComparisonPanel
-              slots={slots}
-              saveSlot={saveSlot}
-              clearSlot={clearSlot}
-              currentSlot={currentSlot}
-            />
-          </div>
-
-
-          {/* Session history */}
-          <section className="lg:col-span-12 rounded-xl border border-border bg-card p-5">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <button
-                onClick={() => setShowHistory((s) => !s)}
-                className="flex items-center gap-2 text-left"
-              >
-                <span className="text-muted-foreground">{showHistory ? "▾" : "▸"}</span>
-                <div>
-                  <div className="mb-1 text-xs uppercase tracking-wider text-primary">Panel 04</div>
-                  <h2 className="text-lg font-semibold">
-                    📋 Session History ({history.length} composition{history.length !== 1 ? "s" : ""})
-                  </h2>
-                </div>
-              </button>
-              <div className="flex flex-wrap gap-2">
-                <select
-                  value={historyFilter}
-                  onChange={(e) => setHistoryFilter(e.target.value as typeof historyFilter)}
-                  className="rounded-md border border-border bg-secondary px-2 py-1 text-xs"
-                >
-                  <option value="ALL">All phases</option>
-                  <option value="QC">QC only</option>
-                  <option value="APPROX">Approximant only</option>
-                  <option value="ORDINARY">Non-QC only</option>
-                </select>
-                <button
-                  onClick={() => {
-                    const arr = history.map((r) => ({
-                      Al: +r.comp.Al.toFixed(2),
-                      Cu: +r.comp.Cu.toFixed(2),
-                      Fe: +r.comp.Fe.toFixed(2),
-                      Mn: +r.comp.Mn.toFixed(2),
-                      e_a: +r.e_a.toFixed(3),
-                      phase: r.pred.kind,
-                      confidence: +r.pred.confidence.toFixed(1),
-                      source: r.source,
-                    }));
-                    const blob = new Blob([JSON.stringify(arr, null, 2)], { type: "application/json" });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = url;
-                    a.download = `qc_session_${Date.now()}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  className="rounded-md border border-border bg-secondary px-3 py-1.5 text-xs hover:bg-secondary/70"
-                >
-                  Export JSON
-                </button>
-                <button
-                  onClick={exportCSV}
-                  className="rounded-md border border-border bg-secondary px-3 py-1.5 text-xs hover:bg-secondary/70"
-                >
-                  📥 Export CSV
-                </button>
-                <button
-                  onClick={() => setHistory([])}
-                  className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-1.5 text-xs text-destructive hover:bg-destructive/20"
-                >
-                  Clear
-                </button>
-              </div>
-            </div>
-
-
-            {showHistory && (
-            <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 320 }}>
+          {history.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Predictions run automatically as you change the composition — results appear here.
+            </p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
-                <thead className="text-xs uppercase tracking-wider text-muted-foreground sticky top-0 bg-card">
-                  <tr className="border-b border-border">
-                    <th className="px-2 py-2 text-left">#</th>
-                    <th className="px-2 py-2 text-right">Al</th>
-                    <th className="px-2 py-2 text-right">Cu</th>
-                    <th className="px-2 py-2 text-right">Fe</th>
-                    <th className="px-2 py-2 text-right">Mn</th>
-                    <th className="px-2 py-2 text-right">Total</th>
-                    <th className="px-2 py-2 text-right">e/a</th>
-                    <th className="px-2 py-2 text-left">Predicted Phase</th>
-                    <th className="px-2 py-2 text-right">Conf%</th>
-                    <th className="px-2 py-2 text-left">Input Method</th>
-                    <th className="px-2 py-2 text-left">Tab</th>
+                <thead className="bg-secondary/60 text-xs text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">#</th>
+                    <th className="px-3 py-2 text-left font-medium">Composition</th>
+                    <th className="px-3 py-2 text-left font-medium">e/a</th>
+                    <th className="px-3 py-2 text-left font-medium">Phase</th>
+                    <th className="px-3 py-2 text-left font-medium">QC prob.</th>
+                    <th className="px-3 py-2 text-left font-medium">Time</th>
                   </tr>
                 </thead>
-                <tbody className="data-mono">
-                  {history.length === 0 && (
-                    <tr>
-                      <td colSpan={11} className="px-2 py-6 text-center text-muted-foreground">
-                        Adjust composition or load a preset to begin logging predictions.
-                      </td>
+                <tbody>
+                  {history.map((r) => (
+                    <tr key={r.id} className="border-t border-border">
+                      <td className="px-3 py-1.5 text-muted-foreground">{r.id}</td>
+                      <td className="data-mono px-3 py-1.5">{r.formula}</td>
+                      <td className="data-mono px-3 py-1.5">{r.ea.toFixed(3)}</td>
+                      <td className="px-3 py-1.5">{r.phase}</td>
+                      <td className="data-mono px-3 py-1.5">{r.confidence.toFixed(1)}%</td>
+                      <td className="px-3 py-1.5 text-muted-foreground">{r.ts}</td>
                     </tr>
-                  )}
-                  {[...history]
-                    .reverse()
-                    .filter((r) => historyFilter === "ALL" || r.pred.kind === historyFilter)
-                    .map((r) => {
-                      const isBest = bestQC?.id === r.id;
-                      const tot = r.comp.Al + r.comp.Cu + r.comp.Fe + r.comp.Mn;
-                      return (
-                        <tr
-                          key={r.id}
-                          onClick={() => reloadFromHistory(r)}
-                          title="Click to reload this composition"
-                          className={`border-b border-border/50 hover:bg-secondary/30 cursor-pointer ${
-                            isBest ? "bg-qc-positive/10" : ""
-                          }`}
-                          style={{ borderLeft: `3px solid ${r.pred.color}` }}
-                        >
-                          <td className="px-2 py-1.5">
-                            {r.id}
-                            {isBest && <span className="ml-1 text-qc-positive">★</span>}
-                          </td>
-                          <td className="px-2 py-1.5 text-right">{r.comp.Al.toFixed(1)}</td>
-                          <td className="px-2 py-1.5 text-right">{r.comp.Cu.toFixed(1)}</td>
-                          <td className="px-2 py-1.5 text-right">{r.comp.Fe.toFixed(1)}</td>
-                          <td className="px-2 py-1.5 text-right">{r.comp.Mn.toFixed(1)}</td>
-                          <td className="px-2 py-1.5 text-right">{tot.toFixed(1)}</td>
-                          <td className="px-2 py-1.5 text-right">{r.e_a.toFixed(3)}</td>
-                          <td className="px-2 py-1.5 text-left font-sans" style={{ color: r.pred.color }}>
-                            {r.pred.label}
-                          </td>
-                          <td className="px-2 py-1.5 text-right">{r.pred.confidence.toFixed(1)}</td>
-                          <td className="px-2 py-1.5 text-left text-muted-foreground font-sans">
-                            {r.source === "Literature" ? "Reference Composition" : "User-Defined"}
-                          </td>
-                          <td className="px-2 py-1.5 text-left text-muted-foreground font-sans uppercase text-[10px]">
-                            {r.tab === "qc" ? "QC" : r.tab === "cnt" ? "CNT" : r.tab === "doping" ? "Doping" : "HT"}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                  ))}
                 </tbody>
               </table>
             </div>
-            )}
-
-            {bestQC && (
-              <div className="mt-3 text-xs text-qc-positive">
-                ★ Best QC candidate: #{bestQC.id} — Al{bestQC.comp.Al.toFixed(1)} Cu
-                {bestQC.comp.Cu.toFixed(1)} Fe{bestQC.comp.Fe.toFixed(1)} Mn
-                {bestQC.comp.Mn.toFixed(1)} ({bestQC.pred.confidence.toFixed(1)}% confidence)
-              </div>
-            )}
-          </section>
-
-          {/* Export */}
-          <ExportPanel buildReportHTML={buildReportHTML} bibtex={bibtex} pythonDict={pythonDict} />
-
-        </div>
-
-
+          )}
+        </section>
 
         <footer className="mt-8 border-t border-border pt-4 text-center text-xs text-muted-foreground">
-          <p>
-            QC Phase Predictor v2.0 | Based on HYPOD-X Database (Fujita et al., 2024) and Ali et al. (2025)
-          </p>
-          <p className="mt-1">
-            ML-based phase prediction: HYPOD-X Random Forest model
-            classifier trained on 9,286 real compositions from the HYPOD-X database
-            (Fujita et al., 2024). GroupKFold validated — balanced accuracy 0.78.
-          </p>
-          <p className="mt-1 italic">For research guidance only — experimental validation required.</p>
+          QC Phase Predictor v3.0 — HYPOD-X ML model. Computational estimates for research
+          guidance; validate experimentally.
         </footer>
       </main>
-    </div>
-  );
-}
-
-// ============ SUB-COMPONENTS ============
-function DescCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <div className="rounded-lg border border-border bg-secondary/40 px-3 py-2">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="data-mono text-base font-semibold text-primary">{value}</div>
-      {hint && <div className="text-[9px] text-muted-foreground/80 mt-0.5">{hint}</div>}
-    </div>
-  );
-}
-
-function ArcGauge({ value, color }: { value: number; color: string }) {
-  const r = 36;
-  const c = Math.PI * r;
-  const v = Math.min(100, Math.max(0, value));
-  const offset = c - (v / 100) * c;
-  return (
-    <svg width="100" height="60" viewBox="0 0 100 60">
-      <path d={`M 10 55 A ${r} ${r} 0 0 1 90 55`} fill="none" stroke="#1E293B" strokeWidth="8" strokeLinecap="round" />
-      <path
-        d={`M 10 55 A ${r} ${r} 0 0 1 90 55`}
-        fill="none"
-        stroke={color}
-        strokeWidth="8"
-        strokeLinecap="round"
-        strokeDasharray={c}
-        strokeDashoffset={offset}
-        style={{ transition: "stroke-dashoffset 0.4s ease, stroke 0.4s ease" }}
-      />
-      <text
-        x="50"
-        y="50"
-        textAnchor="middle"
-        fontSize="14"
-        fontFamily="JetBrains Mono, monospace"
-        fontWeight="700"
-        fill={color}
-      >
-        {Math.round(v)}
-      </text>
-    </svg>
-  );
-}
-
-function HumeRotheryBar({ value }: { value: number }) {
-  const min = 1.5;
-  const max = 2.3;
-  const pct = Math.max(0, Math.min(1, (value - min) / (max - min))) * 100;
-  const seg = (a: number, b: number) => ({
-    left: `${((a - min) / (max - min)) * 100}%`,
-    width: `${((b - a) / (max - min)) * 100}%`,
-  });
-  return (
-    <div className="relative h-3 w-full overflow-hidden rounded-full bg-secondary">
-      <div className="absolute inset-y-0" style={{ ...seg(min, 1.75), background: "#EF444433" }} />
-      <div className="absolute inset-y-0" style={{ ...seg(1.75, 1.8), background: "#F59E0B44" }} />
-      <div className="absolute inset-y-0" style={{ ...seg(1.8, 1.95), background: "#22C55E55" }} />
-      <div className="absolute inset-y-0" style={{ ...seg(1.95, 2.1), background: "#F59E0B44" }} />
-      <div className="absolute inset-y-0" style={{ ...seg(2.1, max), background: "#EF444433" }} />
-      <div
-        className="absolute top-1/2 h-5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground shadow-lg"
-        style={{ left: `${pct}%`, transition: "left 0.3s ease" }}
-      />
     </div>
   );
 }
