@@ -82,7 +82,8 @@ const PRESSURE_LABEL: Record<number, string> = {
 
 interface MLResult {
   qc_probability: number;
-  prediction: string;
+  prediction?: string;
+  predicted_phase?: string;
   e_per_a?: number;
 }
 
