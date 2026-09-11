@@ -251,7 +251,7 @@ function QCPredictor() {
             loading={loading}
             error={error}
             dopant={dopant}
-            mlLabel={ml?.prediction ?? null}
+            mlLabel={ml?.predicted_phase ?? ml?.prediction ?? null}
           />
           <EAAnalysis ea={ea} baseEa={baseEa} dopant={dopant} loading={loading} />
           <StructureViewer
